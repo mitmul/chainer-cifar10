@@ -10,6 +10,8 @@ from cifar10_model import Cifar10Net
 train_data, train_labels, test_data, test_labels = load_dataset()
 N = train_data.shape[0]
 
+print train_data.shape, train_labels.shape
+
 model = Cifar10Net()
 
 # prepare model and optimizer

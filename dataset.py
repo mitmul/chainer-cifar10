@@ -42,7 +42,7 @@ if __name__ == '__main__':
     _labels = labels[0]
     for l in labels[1:]:
         _labels = np.vstack((_labels, l))
-    labels = _labels
+    labels = _labels.reshape((labels.shape[0] * labels.shape[1]))
 
     num, dim = data.shape
     train_data = data.reshape((num, 3, 32, 32)).astype(np.float32) / 255.0
@@ -54,7 +54,7 @@ if __name__ == '__main__':
     test = unpickle('cifar-10-batches-py/test_batch')
     data = test['data']
     labels = np.asarray(test['labels'])
-    labels = labels.reshape((labels.shape[0], 1))
+    # labels = labels.reshape((labels.shape[0], 1))
     num, dim = data.shape
     test_data = data.reshape((num, 3, 32, 32)).astype(np.float32) / 255.0
 

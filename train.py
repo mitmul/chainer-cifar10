@@ -7,6 +7,7 @@ from chainer import optimizers, cuda
 from dataset import load_dataset
 import cPickle as pickle
 import argparse
+import time
 import os
 import sys
 sys.path.append('models')
@@ -17,14 +18,15 @@ parser.add_argument('--model', '-m', type=str, default='cifar10',
 parser.add_argument('--gpu', '-g', type=int, default=-1)
 parser.add_argument('--epoch', '-e', type=int, default=20)
 parser.add_argument('--batchsize', '-b', type=int, default=128)
-parser.add_argument('--datadir', '-d', type=str, default='data')
 parser.add_argument('--prefix', '-p', type=str)
+parser.add_argument('--snapshot', '-s', type=int, default=10)
+parser.add_argument('--datadir', '-d', type=str, default='data')
 args = parser.parse_args()
 print(args)
 
 snapshot_dir, prefix = os.path.split(args.prefix)
 if snapshot_dir and not os.path.exists(snapshot_dir):
-    os.mkdir(snapshot_dir)
+    os.makedirs(snapshot_dir)
 
 if args.model == 'cifar10':
     from cifar10_model import Cifar10Net as Net
@@ -65,6 +67,7 @@ for epoch in range(1, n_epoch + 1):
         optimizer.zero_grads()
         loss, acc = model.forward(x_batch, y_batch)
         loss.backward()
+        optimizer.weight_decay(0.0005)
         optimizer.update()
 
         sum_loss += float(cuda.to_cpu(loss.data)) * batchsize
@@ -77,7 +80,7 @@ for epoch in range(1, n_epoch + 1):
         epoch, sum_loss / N, sum_accuracy / N))
 
     # evaluation
-    if epoch % 5 == 0:
+    if epoch == 1 or epoch % args.snapshot == 0:
         sum_accuracy = 0
         sum_loss = 0
         for i in xrange(0, N_test, batchsize):
@@ -95,4 +98,9 @@ for epoch in range(1, n_epoch + 1):
             epoch, sum_loss / N_test, sum_accuracy / N_test))
 
         model_fn = '%s_epoch_%d.chainermodel' % (args.prefix, epoch)
+
+        if args.gpu >= 0:
+            model.to_cpu()
         pickle.dump(model, open(model_fn, 'wb'), -1)
+        if args.gpu >= 0:
+            model.to_gpu()

@@ -17,7 +17,7 @@ $ bash download.sh
 $ nohup python train.py --model vgg --gpu 0 --epoch 50 --batchsize 128 --prefix vgg &
 ```
 
-You can choose from Cifar10Net(with --model cifar10) or VGGNet(with --model vgg).
+You can choose from Cifar10Net(with --model cifar10) or VGGNet(with --model vgg). The architecture of VGGNet is derived from [here](https://github.com/nagadomi/kaggle-cifar10-torch7). Original paper is [here](http://arxiv.org/pdf/1409.1556.pdf).
 
 ## Draw Loss Curve
 

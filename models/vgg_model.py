@@ -7,6 +7,11 @@ import chainer.functions as F
 
 class VGGNet(FunctionSet):
 
+    """
+    VGGnet with Batch Normalization and Parameterized ReLU
+    - It works fine with Adam
+    """
+
     def __init__(self):
         super(VGGNet, self).__init__(
             conv1=F.Convolution2D(3, 64, 3, stride=1, pad=1),

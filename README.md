@@ -8,15 +8,14 @@ $ bash download.sh
 
 ## Create Dataset
 
-- Without whitening: `$ python dataset.py --whitening False`
-- With whitening: `$ python dataset.py --whitening True`
-    - Whitening should be performed independently to each channel
-    - But now it's naively performed to N x 3072 matrix, so that using whitened dataset provides extremely bad results.
+```
+$ python dataset.py
+```
 
 ## Start Training
 
 ```
-$ nohup python train.py --model vgg --gpu 0 --epoch 50 --batchsize 128 --prefix vgg &
+$ nohup python train.py --gpu 6 --epoch 50 --batchsize 128 --snapshot 10 --datadir data --model vgg --prefix results/vgg_bn_prelu &
 ```
 
 You can choose from Cifar10Net(with --model cifar10) or VGGNet(with --model vgg). The architecture of VGGNet is derived from [here](https://github.com/nagadomi/kaggle-cifar10-torch7). Original paper is [here](http://arxiv.org/pdf/1409.1556.pdf).

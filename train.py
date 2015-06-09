@@ -69,7 +69,7 @@ for epoch in range(1, n_epoch + 1):
         optimizer.zero_grads()
         loss, acc = model.forward(x_batch, y_batch)
         loss.backward()
-        # optimizer.weight_decay(0.0001)
+        optimizer.weight_decay(0.0005)
         optimizer.update()
 
         sum_loss += float(cuda.to_cpu(loss.data)) * batchsize
@@ -78,7 +78,7 @@ for epoch in range(1, n_epoch + 1):
         if args.gpu < 0:
             print('train loss={}'.format(loss.data * batchsize))
 
-    print('epoch:{}\ttrain mean loss={}, accuracy={}'.format(
+    print('epoch:{:02d}\ttrain mean loss={}, accuracy={}'.format(
         epoch, sum_loss / N, sum_accuracy / N))
 
     # evaluation
@@ -96,7 +96,7 @@ for epoch in range(1, n_epoch + 1):
             sum_loss += float(cuda.to_cpu(loss.data)) * batchsize
             sum_accuracy += float(cuda.to_cpu(acc.data)) * batchsize
 
-        print('epoch:{}\ttest mean loss={}, accuracy={}'.format(
+        print('epoch:{:02d}\ttest mean loss={}, accuracy={}'.format(
             epoch, sum_loss / N_test, sum_accuracy / N_test))
 
         model_fn = '%s_epoch_%d.chainermodel' % (args.prefix, epoch)

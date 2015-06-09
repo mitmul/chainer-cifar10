@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function
 import numpy as np
 from chainer import optimizers, cuda
 from dataset import load_dataset
@@ -11,7 +10,9 @@ import time
 import os
 import sys
 sys.path.append('models')
+sys.stdout.flush()
 
+print 'train'
 parser = argparse.ArgumentParser()
 parser.add_argument('--model', '-m', type=str, default='cifar10',
                     choices=['cifar10', 'vgg', 'googlenet'])
@@ -46,7 +47,6 @@ if args.gpu >= 0:
     cuda.init(args.gpu)
     model.to_gpu()
 
-# optimizer = optimizers.MomentumSGD(lr=0.001, momentum=0.9)
 optimizer = optimizers.Adam()
 optimizer.setup(model.collect_parameters())
 
@@ -82,22 +82,22 @@ for epoch in range(1, n_epoch + 1):
         epoch, sum_loss / N, sum_accuracy / N))
 
     # evaluation
+    sum_accuracy = 0
+    sum_loss = 0
+    for i in xrange(0, N_test, batchsize):
+        x_batch = test_data[i:i + batchsize]
+        y_batch = test_labels[i:i + batchsize]
+        if args.gpu >= 0:
+            x_batch = cuda.to_gpu(x_batch)
+            y_batch = cuda.to_gpu(y_batch)
+
+        loss, acc = model.forward(x_batch, y_batch, train=False)
+        sum_loss += float(cuda.to_cpu(loss.data)) * batchsize
+        sum_accuracy += float(cuda.to_cpu(acc.data)) * batchsize
+
+    print('epoch:{:02d}\ttest mean loss={}, accuracy={}'.format(
+        epoch, sum_loss / N_test, sum_accuracy / N_test))
+
     if epoch == 1 or epoch % args.snapshot == 0:
-        sum_accuracy = 0
-        sum_loss = 0
-        for i in xrange(0, N_test, batchsize):
-            x_batch = test_data[i:i + batchsize]
-            y_batch = test_labels[i:i + batchsize]
-            if args.gpu >= 0:
-                x_batch = cuda.to_gpu(x_batch)
-                y_batch = cuda.to_gpu(y_batch)
-
-            loss, acc = model.forward(x_batch, y_batch, train=False)
-            sum_loss += float(cuda.to_cpu(loss.data)) * batchsize
-            sum_accuracy += float(cuda.to_cpu(acc.data)) * batchsize
-
-        print('epoch:{:02d}\ttest mean loss={}, accuracy={}'.format(
-            epoch, sum_loss / N_test, sum_accuracy / N_test))
-
         model_fn = '%s_epoch_%d.chainermodel' % (args.prefix, epoch)
         pickle.dump(model, open(model_fn, 'wb'), -1)

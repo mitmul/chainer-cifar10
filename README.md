@@ -18,6 +18,7 @@ Now the weight values of conv1 layer diverge.
 
 #### LOG:
 
+```
 iteration      0:	accuracy=0.109	conv1_maxval=0.416:
 iteration    128:	accuracy=0.116	conv1_maxval=0.416:
 iteration    256:	accuracy=0.097	conv1_maxval=0.416:
@@ -72,3 +73,4 @@ iteration   5376:	accuracy=0.133	conv1_maxval=nan:
 iteration   5504:	accuracy=0.109	conv1_maxval=nan:
 iteration   5632:	accuracy=0.062	conv1_maxval=nan:
 iteration   5760:	accuracy=0.117	conv1_maxval=nan:
+```

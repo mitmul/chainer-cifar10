@@ -56,6 +56,6 @@ if __name__ == '__main__':
     ax2.plot(test_acc[:, 0], test_acc[:, 1], label='test accuracy', c='c')
     ax2.set_ylabel('accuracy')
 
-    ax1.legend(loc='center right')
-    ax2.legend(loc='center')
-    plt.savefig(args.outfile)
+    ax1.legend(bbox_to_anchor=(0.25, -0.1), loc=9)
+    ax2.legend(bbox_to_anchor=(0.75, -0.1), loc=9)
+    plt.savefig(args.outfile, bbox_inches='tight')

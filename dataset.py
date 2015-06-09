@@ -4,6 +4,9 @@
 import numpy as np
 import glob
 import cPickle
+from sklearn.decomposition import PCA
+from sklearn.externals import joblib
+import argparse
 
 
 def unpickle(file):
@@ -24,6 +27,11 @@ def load_dataset():
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--whitening', '-w', type=bool, default=False)
+    args = parser.parse_args()
+    print(args)
+
     data = []
     labels = []
     for data_fn in sorted(glob.glob('cifar-10-batches-py/data_batch*')):
@@ -36,6 +44,12 @@ if __name__ == '__main__':
     for d in data[1:]:
         _data = np.vstack((_data, d))
     data = _data
+
+    # whitening
+    if args.whitening:
+        pca = PCA(whiten=True)
+        data = pca.fit_transform(data)
+        joblib.dump(pca, 'pca.model')
 
     labels = np.asarray(labels)
     labels = labels.reshape((labels.shape[0], labels.shape[1], 1))
@@ -54,6 +68,8 @@ if __name__ == '__main__':
     test = unpickle('cifar-10-batches-py/test_batch')
 
     data = np.asarray(test['data'])
+    if args.whitening:
+        data = pca.transform(data)
     num, dim = data.shape
     test_data = data.reshape((num, 3, 32, 32)).astype(np.float32) / 255.0
     test_labels = np.asarray(test['labels'], dtype=np.int32)

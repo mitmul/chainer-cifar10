@@ -24,4 +24,4 @@ class Cifar10Net(FunctionSet):
         h = F.max_pooling_2d(F.relu(self.conv3(h)), 3, stride=2)
         h = self.fc4(h)
 
-        return F.softmax_cross_entropy(h, t), F.accuracy(h, t), h
+        return F.softmax_cross_entropy(h, t), F.accuracy(h, t)

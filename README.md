@@ -6,16 +6,25 @@
 $ bash download.sh
 ```
 
+## Create Dataset
+
+- with whitening
+    `$ python dataset.py --whitening True`
+- without whitening
+    `$ python dataset.py --whitening False`
+
 ## Start Training
 
 ```
-$ python train_cpu.py
+$ nohup python train.py --model vgg --gpu 0 --epoch 50 --batchsize 128 --prefix vgg &
 ```
 
-or
+You can choose from Cifar10Net(with --model cifar10) or VGGNet(with --model vgg).
+
+## Draw Loss Curve
 
 ```
-$ python train_gpu.py
+$ python draw_loss.py --logfile nohup.out --outfile vgg_loss.jpg
 ```
 
 ### NOTE:

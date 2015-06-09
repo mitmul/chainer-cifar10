@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import numpy as np
 import glob
 import cPickle
@@ -17,11 +18,11 @@ def unpickle(file):
     return dict
 
 
-def load_dataset():
-    train_data = np.load('train_data.npy')
-    train_labels = np.load('train_labels.npy')
-    test_data = np.load('test_data.npy')
-    test_labels = np.load('test_labels.npy')
+def load_dataset(datadir='data'):
+    train_data = np.load('%s/train_data.npy' % datadir)
+    train_labels = np.load('%s/train_labels.npy' % datadir)
+    test_data = np.load('%s/test_data.npy' % datadir)
+    test_labels = np.load('%s/test_labels.npy' % datadir)
 
     return train_data, train_labels, test_data, test_labels
 
@@ -29,8 +30,12 @@ def load_dataset():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--whitening', '-w', type=bool, default=False)
+    parser.add_argument('--outdir', '-o', type=str, default='data')
     args = parser.parse_args()
     print(args)
+
+    if not os.path.exists(args.outdir):
+        os.mkdir(args.outdir)
 
     data = []
     labels = []
@@ -49,7 +54,7 @@ if __name__ == '__main__':
     if args.whitening:
         pca = PCA(whiten=True)
         data = pca.fit_transform(data)
-        joblib.dump(pca, 'pca.model')
+        joblib.dump(pca, '%s/pca.model' % args.outdir)
 
     labels = np.asarray(labels)
     labels = labels.reshape((labels.shape[0], labels.shape[1], 1))
@@ -62,8 +67,8 @@ if __name__ == '__main__':
     train_data = data.reshape((num, 3, 32, 32)).astype(np.float32) / 255.0
     train_labels = labels.astype(np.int32)
 
-    np.save('train_data', train_data)
-    np.save('train_labels', train_labels)
+    np.save('%s/train_data' % args.outdir, train_data)
+    np.save('%s/train_labels' % args.outdir, train_labels)
 
     test = unpickle('cifar-10-batches-py/test_batch')
 
@@ -74,5 +79,5 @@ if __name__ == '__main__':
     test_data = data.reshape((num, 3, 32, 32)).astype(np.float32) / 255.0
     test_labels = np.asarray(test['labels'], dtype=np.int32)
 
-    np.save('test_data', test_data)
-    np.save('test_labels', test_labels)
+    np.save('%s/test_data' % args.outdir, test_data)
+    np.save('%s/test_labels' % args.outdir, test_labels)

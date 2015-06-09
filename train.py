@@ -17,9 +17,14 @@ parser.add_argument('--model', '-m', type=str, default='cifar10',
 parser.add_argument('--gpu', '-g', type=int, default=-1)
 parser.add_argument('--epoch', '-e', type=int, default=20)
 parser.add_argument('--batchsize', '-b', type=int, default=128)
+parser.add_argument('--datadir', '-d', type=str, default='data')
 parser.add_argument('--prefix', '-p', type=str)
 args = parser.parse_args()
 print(args)
+
+snapshot_dir, prefix = os.path.split(args.prefix)
+if snapshot_dir and not os.path.exists(snapshot_dir):
+    os.mkdir(snapshot_dir)
 
 if args.model == 'cifar10':
     from cifar10_model import Cifar10Net as Net
@@ -27,7 +32,7 @@ if args.model == 'vgg':
     from vgg_model import VGGNet as Net
 
 # load dataset
-train_data, train_labels, test_data, test_labels = load_dataset()
+train_data, train_labels, test_data, test_labels = load_dataset(args.datadir)
 N = train_data.shape[0]
 N_test = test_data.shape[0]
 

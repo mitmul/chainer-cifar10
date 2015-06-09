@@ -8,10 +8,8 @@ $ bash download.sh
 
 ## Create Dataset
 
-- with whitening
-    `$ python dataset.py --whitening True`
-- without whitening
-    `$ python dataset.py --whitening False`
+- with whitening: `$ python dataset.py --whitening True`
+- without whitening: `$ python dataset.py --whitening False`
 
 ## Start Training
 

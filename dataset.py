@@ -52,11 +52,11 @@ if __name__ == '__main__':
     np.save('train_labels', train_labels)
 
     test = unpickle('cifar-10-batches-py/test_batch')
-    data = test['data']
-    labels = np.asarray(test['labels'])
-    # labels = labels.reshape((labels.shape[0], 1))
+
+    data = np.asarray(test['data'])
     num, dim = data.shape
     test_data = data.reshape((num, 3, 32, 32)).astype(np.float32) / 255.0
+    test_labels = np.asarray(test['labels'], dtype=np.int32)
 
     np.save('test_data', test_data)
-    np.save('test_labels', labels)
+    np.save('test_labels', test_labels)

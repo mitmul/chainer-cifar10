@@ -9,7 +9,7 @@ class Cifar10Net(FunctionSet):
 
     def __init__(self):
         super(Cifar10Net, self).__init__(
-            conv1=F.Convolution2D(3, 32, 5, stride=1, pad=2, use_cudnn=True),
+            conv1=F.Convolution2D(3, 32, 5, stride=1, pad=2),
             bn1=F.BatchNormalization(32),
             conv2=F.Convolution2D(32, 32, 5, stride=1, pad=2),
             bn2=F.BatchNormalization(32),

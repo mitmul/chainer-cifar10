@@ -14,7 +14,7 @@ sys.path.append('models')
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--model', '-m', type=str, default='cifar10',
-                    choices=['cifar10', 'vgg'])
+                    choices=['cifar10', 'vgg', 'googlenet'])
 parser.add_argument('--gpu', '-g', type=int, default=-1)
 parser.add_argument('--epoch', '-e', type=int, default=20)
 parser.add_argument('--batchsize', '-b', type=int, default=128)
@@ -32,6 +32,8 @@ if args.model == 'cifar10':
     from cifar10_model import Cifar10Net as Net
 if args.model == 'vgg':
     from vgg_model import VGGNet as Net
+if args.model == 'googlenet':
+    from googlenet_model import GoogLeNetBN as Net
 
 # load dataset
 train_data, train_labels, test_data, test_labels = load_dataset(args.datadir)
@@ -67,7 +69,7 @@ for epoch in range(1, n_epoch + 1):
         optimizer.zero_grads()
         loss, acc = model.forward(x_batch, y_batch)
         loss.backward()
-        optimizer.weight_decay(0.0005)
+        # optimizer.weight_decay(0.0001)
         optimizer.update()
 
         sum_loss += float(cuda.to_cpu(loss.data)) * batchsize
@@ -98,9 +100,4 @@ for epoch in range(1, n_epoch + 1):
             epoch, sum_loss / N_test, sum_accuracy / N_test))
 
         model_fn = '%s_epoch_%d.chainermodel' % (args.prefix, epoch)
-
-        if args.gpu >= 0:
-            model.to_cpu()
         pickle.dump(model, open(model_fn, 'wb'), -1)
-        if args.gpu >= 0:
-            model.to_gpu()

@@ -8,8 +8,10 @@ $ bash download.sh
 
 ## Create Dataset
 
-- with whitening: `$ python dataset.py --whitening True`
-- without whitening: `$ python dataset.py --whitening False`
+- Without whitening: `$ python dataset.py --whitening False`
+- With whitening: `$ python dataset.py --whitening True`
+    - Whitening should be performed independently to each channel
+    - But now it's naively performed to N x 3072 matrix, so that using whitened dataset provides extremely bad results.
 
 ## Start Training
 
@@ -25,6 +27,7 @@ You can choose from Cifar10Net(with --model cifar10) or VGGNet(with --model vgg)
 $ python draw_loss.py --logfile nohup.out --outfile vgg_loss.jpg
 ```
 
-### NOTE:
+### TIPS:
 
-The label vector will be passed to softmax_cross_entropy should be in shape (N,). (N, 1) cases divergence of weights.
+- The label vector will be passed to softmax_cross_entropy should be in shape (N,). (N, 1) cases divergence of weights.
+- If `model.to_cpu()` and `model.to_gpu()` are called during training, test scores are fixed and never updated despite progress of training loops.

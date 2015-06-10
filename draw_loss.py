@@ -47,6 +47,7 @@ if __name__ == '__main__':
     fig, ax1 = plt.subplots()
     ax1.plot(train_loss[:, 0], train_loss[:, 1], label='training loss')
     ax1.plot(test_loss[:, 0], test_loss[:, 1], label='test loss')
+    ax1.set_xlim([1, len(train_loss)])
     ax1.set_xlabel('epoch')
     ax1.set_ylabel('loss')
 
@@ -54,6 +55,7 @@ if __name__ == '__main__':
     ax2.plot(train_acc[:, 0], train_acc[:, 1],
              label='training accuracy', c='r')
     ax2.plot(test_acc[:, 0], test_acc[:, 1], label='test accuracy', c='c')
+    ax2.set_xlim([1, len(train_loss)])
     ax2.set_ylabel('accuracy')
 
     ax1.legend(bbox_to_anchor=(0.25, -0.1), loc=9)

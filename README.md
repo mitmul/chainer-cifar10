@@ -20,7 +20,13 @@ $ nohup python train.py --gpu 0 --epoch 50 --batchsize 128 --snapshot 10 --datad
 
 You can choose from Cifar10Net(with --model cifar10) or VGGNet(with --model vgg). The architecture of VGGNet is derived from [here](https://github.com/nagadomi/kaggle-cifar10-torch7). Original paper is [here](http://arxiv.org/pdf/1409.1556.pdf).
 
-VGGNet optimized by Adam achieves 87.9% accuracy after 30 epochs.
+
+## Results
+
+- VGGNet optimized by Adam
+    - baseline: 87.9% accuracy after 50 epochs
+    - with random horizontal flip: 89.7% accuracy after 50 epochs
+    - with random horizontal flip + global contrast normalization: 
 
 ## Draw Loss Curve
 

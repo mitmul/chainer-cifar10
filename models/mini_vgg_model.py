@@ -5,7 +5,7 @@ from chainer import Variable, FunctionSet
 import chainer.functions as F
 
 
-class Vgg(FunctionSet):
+class MiniVgg(FunctionSet):
 
     """
     VGGnet with Batch Normalization and Parameterized ReLU
@@ -13,7 +13,7 @@ class Vgg(FunctionSet):
     """
 
     def __init__(self):
-        super(Vgg, self).__init__(
+        super(MiniVgg, self).__init__(
             conv1=F.Convolution2D(3, 64, 3, stride=1, pad=1),
             bn1=F.BatchNormalization(64),
             prelu1=F.PReLU(),
@@ -30,29 +30,21 @@ class Vgg(FunctionSet):
             bn4=F.BatchNormalization(128),
             prelu4=F.PReLU(),
 
-            conv5=F.Convolution2D(128, 256, 3, stride=1, pad=1),
-            bn5=F.BatchNormalization(256),
+            conv5=F.Convolution2D(128, 128, 3, stride=1, pad=1),
+            bn5=F.BatchNormalization(128),
             prelu5=F.PReLU(),
 
-            conv6=F.Convolution2D(256, 256, 3, stride=1, pad=1),
-            bn6=F.BatchNormalization(256),
+            conv6=F.Convolution2D(128, 128, 3, stride=1, pad=1),
+            bn6=F.BatchNormalization(128),
             prelu6=F.PReLU(),
 
-            conv7=F.Convolution2D(256, 256, 3, stride=1, pad=1),
-            bn7=F.BatchNormalization(256),
+            fc7=F.Linear(2048, 1024),
             prelu7=F.PReLU(),
 
-            conv8=F.Convolution2D(256, 256, 3, stride=1, pad=1),
-            bn8=F.BatchNormalization(256),
+            fc8=F.Linear(1024, 1024),
             prelu8=F.PReLU(),
 
-            fc9=F.Linear(4096, 1024),
-            prelu9=F.PReLU(),
-
-            fc10=F.Linear(1024, 1024),
-            prelu10=F.PReLU(),
-
-            fc11=F.Linear(1024, 10)
+            fc9=F.Linear(1024, 10)
         )
 
     def forward(self, x_data, y_data, train=True):
@@ -70,13 +62,11 @@ class Vgg(FunctionSet):
 
         h = self.prelu5(self.bn5(self.conv5(h)))
         h = self.prelu6(self.bn6(self.conv6(h)))
-        h = self.prelu7(self.bn7(self.conv7(h)))
-        h = self.prelu8(self.bn8(self.conv8(h)))
         h = F.dropout(
             F.max_pooling_2d(h, 3, stride=2), train=train, ratio=0.25)
 
-        h = F.dropout(self.prelu9(self.fc9(h)), train=train, ratio=0.5)
-        h = F.dropout(self.prelu10(self.fc10(h)), train=train, ratio=0.5)
-        h = self.fc11(h)
+        h = F.dropout(self.prelu7(self.fc7(h)), train=train, ratio=0.5)
+        h = F.dropout(self.prelu8(self.fc8(h)), train=train, ratio=0.5)
+        h = self.fc9(h)
 
         return F.softmax_cross_entropy(h, t), F.accuracy(h, t)

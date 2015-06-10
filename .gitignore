@@ -7,3 +7,5 @@ results
 
 *.npy
 *.pyc
+*.png
+*.txt

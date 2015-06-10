@@ -5,10 +5,10 @@ from chainer import Variable, FunctionSet
 import chainer.functions as F
 
 
-class Cifar10Net(FunctionSet):
+class Cifar10(FunctionSet):
 
     def __init__(self):
-        super(Cifar10Net, self).__init__(
+        super(Cifar10, self).__init__(
             conv1=F.Convolution2D(3, 32, 5, stride=1, pad=2),
             bn1=F.BatchNormalization(32),
             conv2=F.Convolution2D(32, 32, 5, stride=1, pad=2),

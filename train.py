@@ -118,6 +118,3 @@ for epoch in range(1, n_epoch + 1):
         model_fn = '%s_epoch_%d.chainermodel' % (
             args.prefix, epoch + args.epoch_offset)
         pickle.dump(model, open(model_fn, 'wb'), -1)
-
-    if epoch % 10 == 0:
-        optimizer.lr *= 0.1

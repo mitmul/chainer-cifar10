@@ -48,7 +48,6 @@ if args.gpu >= 0:
     model.to_gpu()
 
 optimizer = optimizers.Adam()
-# optimizer = optimizers.MomentumSGD(lr=0.01, momentum=0.9)
 optimizer.setup(model.collect_parameters())
 
 # learning loop
@@ -69,9 +68,6 @@ for epoch in range(1, n_epoch + 1):
             if np.random.randint(2) == 1:
                 x = np.fliplr(x.transpose((1, 2, 0)))
                 x_batch[j] = x.transpose((2, 0, 1))
-            # # Global Contrast Normalization
-            # for ch, x in enumerate(x_batch[j]):
-            #     x_batch[j][ch] = (x - np.mean(x)) / np.std(x)
         if args.gpu >= 0:
             x_batch = cuda.to_gpu(x_batch)
             y_batch = cuda.to_gpu(y_batch)
@@ -79,7 +75,6 @@ for epoch in range(1, n_epoch + 1):
         optimizer.zero_grads()
         loss, acc = model.forward(x_batch, y_batch)
         loss.backward()
-        # optimizer.weight_decay(0.0001)
         optimizer.update()
 
         sum_loss += float(cuda.to_cpu(loss.data)) * batchsize
@@ -98,10 +93,6 @@ for epoch in range(1, n_epoch + 1):
     for i in xrange(0, N_test, batchsize):
         x_batch = test_data[i:i + batchsize]
         y_batch = test_labels[i:i + batchsize]
-        # for j, x in enumerate(x_batch):
-        #     # Global Contrast Normalization
-        #     for ch, x in enumerate(x_batch[j]):
-        #         x_batch[j][ch] = (x - np.mean(x)) / np.std(x)
 
         if args.gpu >= 0:
             x_batch = cuda.to_gpu(x_batch)

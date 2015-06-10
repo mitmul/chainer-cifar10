@@ -25,14 +25,17 @@ You can choose from Cifar10Net(with --model cifar10) or VGGNet(with --model vgg)
 
 - VGGNet optimized by Adam
     - baseline: 87.9% accuracy after 50 epochs
-    - with random horizontal flip: 89.7% accuracy after 50 epochs
-    - with random horizontal flip + global contrast normalization: 
+    - with random horizontal flip: 90.0% accuracy after 50 epochs
+        - [model definition](https://gist.githubusercontent.com/mitmul/87fcc1601d59f6fa928f/raw/1a293f6c5a846a6165f38b5c1ddc49b9ec47595a/vgg_mode.py)
+        - [model file](https://gist.github.com/mitmul/87fcc1601d59f6fa928f/raw/093a0daff924740a28f71b4c1c580d34b1de1bf6/vgg_epoch_50.chainermodel)
 
 ## Draw Loss Curve
 
 ```
 $ python draw_loss.py --logfile nohup.out --outfile vgg_loss.jpg
 ```
+
+![loss curve](https://gist.github.com/mitmul/87fcc1601d59f6fa928f/raw/7f3a37949ef6260f216802f22e93fe1f57b44253/vgg_bn_prelu_adam_flip.png)
 
 ### TIPS:
 

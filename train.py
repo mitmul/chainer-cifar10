@@ -25,6 +25,7 @@ def get_model_optimizer(result_dir, model_name, gpu):
 
     shutil.copy('models/%s_model.py' % model_name,
                 '%s/%s_model.py' % (result_dir, model_name))
+    shutil.copy(__file__, '%s/train.py' % result_dir)
 
     # prepare model and optimizer
     model = Net()
@@ -118,8 +119,9 @@ if __name__ == '__main__':
     N_test = test_data.shape[0]
 
     # augmentation setting
-    trans = Transform(flip=True,
-                      shift=5,
+    trans = Transform(angle=10,
+                      flip=True,
+                      shift=10,
                       size=(32, 32),
                       norm=False)
 

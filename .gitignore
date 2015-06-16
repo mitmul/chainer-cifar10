@@ -4,8 +4,11 @@ results
 
 .DS_Store
 .ftpconfig
+.remote-sync.json
 
 *.npy
 *.pyc
 *.png
 *.txt
+
+!loss.png

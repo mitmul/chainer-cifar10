@@ -60,23 +60,23 @@ class Vgg(FunctionSet):
 
         h = self.prelu1(self.bn1(self.conv1(x)))
         h = self.prelu2(self.bn2(self.conv2(h)))
-        h = F.dropout(
-            F.max_pooling_2d(h, 3, stride=2), train=train, ratio=0.25)
+        h = F.max_pooling_2d(h, 3, stride=2)
 
         h = self.prelu3(self.bn3(self.conv3(h)))
         h = self.prelu4(self.bn4(self.conv4(h)))
-        h = F.dropout(
-            F.max_pooling_2d(h, 3, stride=2), train=train, ratio=0.25)
+        h = F.max_pooling_2d(h, 3, stride=2)
 
         h = self.prelu5(self.bn5(self.conv5(h)))
         h = self.prelu6(self.bn6(self.conv6(h)))
         h = self.prelu7(self.bn7(self.conv7(h)))
         h = self.prelu8(self.bn8(self.conv8(h)))
-        h = F.dropout(
-            F.max_pooling_2d(h, 3, stride=2), train=train, ratio=0.25)
+        h = F.max_pooling_2d(h, 3, stride=2)
 
         h = F.dropout(self.prelu9(self.fc9(h)), train=train, ratio=0.5)
         h = F.dropout(self.prelu10(self.fc10(h)), train=train, ratio=0.5)
         h = self.fc11(h)
 
-        return F.softmax_cross_entropy(h, t), F.accuracy(h, t)
+        if train:
+            return F.softmax_cross_entropy(h, t), F.accuracy(h, t)
+        else:
+            return F.softmax_cross_entropy(h, t), F.accuracy(h, t), h

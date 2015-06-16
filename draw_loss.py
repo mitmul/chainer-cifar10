@@ -10,22 +10,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import argparse
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--logfile', '-f', type=str)
-    parser.add_argument('--outfile', '-o', type=str)
-    args = parser.parse_args()
-    print(args)
 
-    log_fn = args.logfile
-
+def draw_loss_curve(logfile, outfile):
     train_loss = []
     train_acc = []
     test_loss = []
     test_acc = []
-    for line in open(log_fn):
+    for line in open(logfile):
         line = line.strip()
-        if not line.startswith('epoch'):
+        if not 'epoch:' in line:
             continue
         epoch = int(re.search(ur'epoch:([0-9]+)', line).groups()[0])
         if 'train' in line:
@@ -60,4 +53,14 @@ if __name__ == '__main__':
 
     ax1.legend(bbox_to_anchor=(0.25, -0.1), loc=9)
     ax2.legend(bbox_to_anchor=(0.75, -0.1), loc=9)
-    plt.savefig(args.outfile, bbox_inches='tight')
+    plt.savefig(outfile, bbox_inches='tight')
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--logfile', '-f', type=str)
+    parser.add_argument('--outfile', '-o', type=str)
+    args = parser.parse_args()
+    print(args)
+
+    draw_loss_curve(args.logfile, args.outfile)

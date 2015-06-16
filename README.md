@@ -20,7 +20,6 @@ $ nohup python train.py --gpu 0 --epoch 50 --batchsize 128 --snapshot 10 --datad
 
 You can choose from Cifar10Net(with --model cifar10) or VGGNet(with --model vgg). The architecture of VGGNet is derived from [here](https://github.com/nagadomi/kaggle-cifar10-torch7). Original paper is [here](http://arxiv.org/pdf/1409.1556.pdf).
 
-
 ## Results
 
 - VGGNet optimized by Adam
@@ -35,7 +34,7 @@ You can choose from Cifar10Net(with --model cifar10) or VGGNet(with --model vgg)
 $ python draw_loss.py --logfile nohup.out --outfile vgg_loss.jpg
 ```
 
-![loss curve](loss.png)
+![loss curve](https://raw.github.com/wiki/mitmul/chainer-cifar10/loss.png)
 
 ### TIPS:
 

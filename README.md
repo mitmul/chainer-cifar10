@@ -34,7 +34,7 @@ You can choose from Cifar10Net(with --model cifar10) or VGGNet(with --model vgg)
 $ python draw_loss.py --logfile nohup.out --outfile vgg_loss.jpg
 ```
 
-![loss curve](https://raw.github.com/wiki/mitmul/chainer-cifar10/loss.png)
+![loss curve](loss.png)
 
 ### TIPS:
 

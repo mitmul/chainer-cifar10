@@ -24,9 +24,11 @@ You can choose from Cifar10Net(with --model cifar10) or VGGNet(with --model vgg)
 
 - VGGNet optimized by Adam
     - baseline: 87.9% accuracy after 50 epochs
-    - with random horizontal flip: 90.0% accuracy after 50 epochs
-        - [model definition](https://gist.githubusercontent.com/mitmul/87fcc1601d59f6fa928f/raw/1a293f6c5a846a6165f38b5c1ddc49b9ec47595a/vgg_mode.py)
-        - [model file](https://gist.github.com/mitmul/87fcc1601d59f6fa928f/raw/093a0daff924740a28f71b4c1c580d34b1de1bf6/vgg_epoch_50.chainermodel)
+    - with random horizontal flip and random translation:
+        - 90.13% accuracy after 50 epochs
+        - [model definition](https://gist.github.com/mitmul/3c7004741e8844f9590a/raw/4418f4853e59ea83633472dba0f9f4497b7af0af/vgg_model.py)
+        - [train.py (augmentation settings)](https://gist.github.com/mitmul/3c7004741e8844f9590a/raw/8e0464afa78fabd1724c867b62fb9ebf5fc3b201/train.py)
+        - [model file](https://gist.github.com/mitmul/3c7004741e8844f9590a/raw/2ccb56bf35ba235951fb50d653409b7c170cc9ca/vgg_aug_epoch_50.chainermodel)
 
 ## Draw Loss Curve
 
@@ -34,7 +36,7 @@ You can choose from Cifar10Net(with --model cifar10) or VGGNet(with --model vgg)
 $ python draw_loss.py --logfile nohup.out --outfile vgg_loss.jpg
 ```
 
-![loss curve](loss.png)
+![loss curve](loss.jpg)
 
 ### TIPS:
 

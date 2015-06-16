@@ -52,9 +52,11 @@ def train(train_data, train_labels, N, batchsize, model, optimizer, trans, gpu):
         x_batch = train_data[perm[i:i + batchsize]]
         y_batch = train_labels[perm[i:i + batchsize]]
         # data augmentation
-        for j, x in enumerate(x_batch):
-            x_batch[j] = trans.transform(
-                x.transpose((1, 2, 0))).transpose((2, 0, 1))
+        aug_x = []
+        for x in x_batch:
+            aug_x.append(
+                trans.transform(x.transpose((1, 2, 0))).transpose((2, 0, 1)))
+        aug_x = np.asarray(aug_x, dtype=np.float32)
         if gpu >= 0:
             x_batch = cuda.to_gpu(x_batch)
             y_batch = cuda.to_gpu(y_batch)
@@ -119,10 +121,9 @@ if __name__ == '__main__':
     N_test = test_data.shape[0]
 
     # augmentation setting
-    trans = Transform(angle=10,
-                      flip=True,
+    trans = Transform(flip=True,
                       shift=10,
-                      size=(32, 32),
+                      size=(26, 26),
                       norm=False)
 
     logging.info('start training...')

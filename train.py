@@ -109,7 +109,7 @@ if __name__ == '__main__':
         time.strftime('%Y-%m-%d_%H-%M-%S_') + \
         str(time.time()).replace('.', '')
     if not os.path.exists(result_dir):
-        os.mkdir(result_dir)
+        os.makedirs(result_dir)
     log_fn = '%s/log.txt' % result_dir
     logging.basicConfig(filename=log_fn, level=logging.DEBUG)
     logging.info(args)

@@ -15,66 +15,59 @@ class Vgg(FunctionSet):
     def __init__(self):
         super(Vgg, self).__init__(
             conv1=F.Convolution2D(3, 64, 3, stride=1, pad=1),
-            bn1=F.BatchNormalization(64),
-            prelu1=F.PReLU(),
-
             conv2=F.Convolution2D(64, 64, 3, stride=1, pad=1),
-            bn2=F.BatchNormalization(64),
-            prelu2=F.PReLU(),
 
             conv3=F.Convolution2D(64, 128, 3, stride=1, pad=1),
-            bn3=F.BatchNormalization(128),
-            prelu3=F.PReLU(),
-
             conv4=F.Convolution2D(128, 128, 3, stride=1, pad=1),
-            bn4=F.BatchNormalization(128),
-            prelu4=F.PReLU(),
+            conv5=F.Convolution2D(128, 128, 3, stride=1, pad=1),
 
-            conv5=F.Convolution2D(128, 256, 3, stride=1, pad=1),
-            bn5=F.BatchNormalization(256),
-            prelu5=F.PReLU(),
+            conv6=F.Convolution2D(128, 128, 3, stride=1, pad=1),
+            conv7=F.Convolution2D(128, 128, 3, stride=1, pad=1),
+            conv8=F.Convolution2D(128, 128, 3, stride=1, pad=1),
 
-            conv6=F.Convolution2D(256, 256, 3, stride=1, pad=1),
-            bn6=F.BatchNormalization(256),
-            prelu6=F.PReLU(),
+            conv9=F.Convolution2D(128, 256, 3, stride=1, pad=1),
+            conv10=F.Convolution2D(256, 256, 3, stride=1, pad=1),
+            conv11=F.Convolution2D(256, 256, 3, stride=1, pad=1),
 
-            conv7=F.Convolution2D(256, 256, 3, stride=1, pad=1),
-            bn7=F.BatchNormalization(256),
-            prelu7=F.PReLU(),
+            conv12=F.Convolution2D(256, 256, 3, stride=1, pad=1),
+            conv13=F.Convolution2D(256, 256, 3, stride=1, pad=1),
+            conv14=F.Convolution2D(256, 256, 3, stride=1, pad=1),
 
-            conv8=F.Convolution2D(256, 256, 3, stride=1, pad=1),
-            bn8=F.BatchNormalization(256),
-            prelu8=F.PReLU(),
-
-            fc9=F.Linear(4096, 1024),
-            prelu9=F.PReLU(),
-
-            fc10=F.Linear(1024, 1024),
-            prelu10=F.PReLU(),
-
-            fc11=F.Linear(1024, 10)
+            fc15=F.Linear(1024, 1024),
+            fc16=F.Linear(1024, 1024),
+            pred=F.Linear(1024, 10)
         )
 
     def forward(self, x_data, y_data, train=True):
         x, t = Variable(x_data), Variable(y_data)
 
-        h = self.prelu1(self.bn1(self.conv1(x)))
-        h = self.prelu2(self.bn2(self.conv2(h)))
+        h = F.relu(self.conv1(x))
+        h = F.relu(self.conv2(h))
         h = F.max_pooling_2d(h, 3, stride=2)
 
-        h = self.prelu3(self.bn3(self.conv3(h)))
-        h = self.prelu4(self.bn4(self.conv4(h)))
+        h = F.relu(self.conv3(h))
+        h = F.relu(self.conv4(h))
+        h = F.relu(self.conv5(h))
         h = F.max_pooling_2d(h, 3, stride=2)
 
-        h = self.prelu5(self.bn5(self.conv5(h)))
-        h = self.prelu6(self.bn6(self.conv6(h)))
-        h = self.prelu7(self.bn7(self.conv7(h)))
-        h = self.prelu8(self.bn8(self.conv8(h)))
+        h = F.relu(self.conv6(h))
+        h = F.relu(self.conv7(h))
+        h = F.relu(self.conv8(h))
         h = F.max_pooling_2d(h, 3, stride=2)
 
-        h = F.dropout(self.prelu9(self.fc9(h)), train=train, ratio=0.5)
-        h = F.dropout(self.prelu10(self.fc10(h)), train=train, ratio=0.5)
-        h = self.fc11(h)
+        h = F.relu(self.conv9(h))
+        h = F.relu(self.conv10(h))
+        h = F.relu(self.conv11(h))
+        h = F.max_pooling_2d(h, 2, stride=1)
+
+        h = F.relu(self.conv12(h))
+        h = F.relu(self.conv13(h))
+        h = F.relu(self.conv14(h))
+        h = F.max_pooling_2d(h, 2, stride=1)
+
+        h = F.dropout(F.relu(self.fc15(h)), train=train, ratio=0.5)
+        h = F.dropout(F.relu(self.fc16(h)), train=train, ratio=0.5)
+        h = self.pred(h)
 
         if train:
             return F.softmax_cross_entropy(h, t), F.accuracy(h, t)

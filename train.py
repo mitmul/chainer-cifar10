@@ -16,6 +16,7 @@ from dataset import load_dataset
 from transform import Transform
 import cPickle as pickle
 from draw_loss import draw_loss_curve
+from progressbar import ProgressBar
 
 
 def get_model_optimizer(result_dir, model_name, gpu):
@@ -45,6 +46,7 @@ def get_model_optimizer(result_dir, model_name, gpu):
 
 def train(train_data, train_labels, N, batchsize, model, optimizer, trans, gpu):
     # training
+    pbar = ProgressBar(N)
     perm = np.random.permutation(N)
     sum_accuracy = 0
     sum_loss = 0
@@ -68,12 +70,14 @@ def train(train_data, train_labels, N, batchsize, model, optimizer, trans, gpu):
 
         sum_loss += float(cuda.to_cpu(loss.data)) * batchsize
         sum_accuracy += float(cuda.to_cpu(acc.data)) * batchsize
+        pbar.update(i + batchsize if (i + batchsize) < N else N)
 
     return sum_loss, sum_accuracy
 
 
 def eval(test_data, test_labels, N_test, batchsize, model, gpu):
     # evaluation
+    pbar = ProgressBar(N)
     sum_accuracy = 0
     sum_loss = 0
     for i in xrange(0, N_test, batchsize):
@@ -87,6 +91,7 @@ def eval(test_data, test_labels, N_test, batchsize, model, gpu):
         loss, acc, _ = model.forward(x_batch, y_batch, train=False)
         sum_loss += float(cuda.to_cpu(loss.data)) * batchsize
         sum_accuracy += float(cuda.to_cpu(acc.data)) * batchsize
+        pbar.update(i + batchsize if (i + batchsize) < N else N)
 
     return sum_loss, sum_accuracy
 
@@ -123,7 +128,7 @@ if __name__ == '__main__':
     # augmentation setting
     trans = Transform(flip=True,
                       shift=10,
-                      size=(26, 26),
+                      size=(32, 32),
                       norm=False)
 
     logging.info('start training...')

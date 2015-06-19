@@ -1,5 +1,10 @@
 # Cifar10Net with Chainer
 
+## Requirement
+
+- Chainer (https://github.com/pfnet/chainer.git)
+- progressbar2 (`$ pip install progressbar2`)
+
 ## Download Cifar10 Dataset
 
 ```

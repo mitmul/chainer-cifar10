@@ -96,7 +96,7 @@ def train(train_data, train_labels, N, model, optimizer, trans, args):
     perm = np.random.permutation(N)
     sum_accuracy = 0
     sum_loss = 0
-    for i in range(0, N, args.batchsize):
+    for i in range(0, N + args.batchsize, args.batchsize):
         x_batch = train_data[perm[i:i + args.batchsize]]
         y_batch = train_labels[perm[i:i + args.batchsize]]
 
@@ -142,7 +142,7 @@ def eval(test_data, test_labels, N_test, model, args):
     pbar = ProgressBar(N_test)
     sum_accuracy = 0
     sum_loss = 0
-    for i in xrange(0, N_test, args.batchsize):
+    for i in xrange(0, N_test + args.batchsize, args.batchsize):
         x_batch = test_data[i:i + args.batchsize]
         y_batch = test_labels[i:i + args.batchsize]
 
@@ -177,7 +177,7 @@ if __name__ == '__main__':
     parser.add_argument('--size', type=int, default=32)
     parser.add_argument('--norm', type=bool, default=True)
     parser.add_argument('--lr', type=float, default=0.01)
-    parser.add_argument('--lr_decay_freq', type=int, default=20)
+    parser.add_argument('--lr_decay_freq', type=int, default=5)
     parser.add_argument('--lr_decay_ratio', type=float, default=0.9)
     args = parser.parse_args()
 

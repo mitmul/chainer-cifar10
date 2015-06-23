@@ -148,11 +148,11 @@ def eval(test_data, test_labels, N_test, model, args):
     sum_loss = 0
     for i in xrange(0, N_test + args.batchsize, args.batchsize):
         if i + args.batchsize >= N:
-            x_batch = train_data[perm[N - args.batchsize:]]
-            y_batch = train_labels[perm[N - args.batchsize:]]
+            x_batch = train_data[N - args.batchsize:]
+            y_batch = train_labels[N - args.batchsize:]
         else:
-            x_batch = train_data[perm[i:i + args.batchsize]]
-            y_batch = train_labels[perm[i:i + args.batchsize]]
+            x_batch = train_data[i:i + args.batchsize]
+            y_batch = train_labels[i:i + args.batchsize]
 
         if args.norm:
             x_batch = np.asarray(map(norm, x_batch))
@@ -184,9 +184,9 @@ if __name__ == '__main__':
     parser.add_argument('--shift', type=int, default=5)
     parser.add_argument('--size', type=int, default=32)
     parser.add_argument('--norm', type=bool, default=True)
-    parser.add_argument('--lr', type=float, default=0.01)
+    parser.add_argument('--lr', type=float, default=0.1)
     parser.add_argument('--lr_decay_freq', type=int, default=5)
-    parser.add_argument('--lr_decay_ratio', type=float, default=0.9)
+    parser.add_argument('--lr_decay_ratio', type=float, default=0.5)
     args = parser.parse_args()
 
     # create result dir
@@ -203,7 +203,7 @@ if __name__ == '__main__':
     trans = Transform(flip=args.flip,
                       shift=args.shift,
                       size=(args.size, args.size),
-                      norm=args.norm)
+                      norm = args.norm)
     logging.info('start training...')
 
     # learning loop

@@ -97,8 +97,12 @@ def train(train_data, train_labels, N, model, optimizer, trans, args):
     sum_accuracy = 0
     sum_loss = 0
     for i in range(0, N + args.batchsize, args.batchsize):
-        x_batch = train_data[perm[i:i + args.batchsize]]
-        y_batch = train_labels[perm[i:i + args.batchsize]]
+        if i + args.batchsize >= N:
+            x_batch = train_data[perm[N - args.batchsize:]]
+            y_batch = train_labels[perm[N - args.batchsize:]]
+        else:
+            x_batch = train_data[perm[i:i + args.batchsize]]
+            y_batch = train_labels[perm[i:i + args.batchsize]]
 
         # data augmentation
         x_batch_queue.put(x_batch)
@@ -143,8 +147,12 @@ def eval(test_data, test_labels, N_test, model, args):
     sum_accuracy = 0
     sum_loss = 0
     for i in xrange(0, N_test + args.batchsize, args.batchsize):
-        x_batch = test_data[i:i + args.batchsize]
-        y_batch = test_labels[i:i + args.batchsize]
+        if i + args.batchsize >= N:
+            x_batch = train_data[perm[N - args.batchsize:]]
+            y_batch = train_labels[perm[N - args.batchsize:]]
+        else:
+            x_batch = train_data[perm[i:i + args.batchsize]]
+            y_batch = train_labels[perm[i:i + args.batchsize]]
 
         if args.norm:
             x_batch = np.asarray(map(norm, x_batch))
@@ -196,7 +204,6 @@ if __name__ == '__main__':
                       shift=args.shift,
                       size=(args.size, args.size),
                       norm=args.norm)
-
     logging.info('start training...')
 
     # learning loop

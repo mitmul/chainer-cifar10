@@ -147,7 +147,7 @@ def eval(test_data, test_labels, N_test, model, args):
         y_batch = test_labels[i:i + args.batchsize]
 
         if args.norm:
-            x_batch = map(norm, x_batch)
+            x_batch = map(args.norm, x_batch)
 
         if args.gpu >= 0:
             x_batch = cuda.to_gpu(x_batch)
@@ -163,15 +163,19 @@ def eval(test_data, test_labels, N_test, model, args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', '-m', type=str, default='models/VGG.py')
-    parser.add_argument('--gpu', '-g', type=int, default=0)
-    parser.add_argument('--epoch', '-e', type=int, default=50)
-    parser.add_argument('--batchsize', '-b', type=int, default=128)
-    parser.add_argument('--prefix', '-p', type=str)
-    parser.add_argument('--snapshot', '-s', type=int, default=10)
-    parser.add_argument('--restart_from', '-r', type=str)
-    parser.add_argument('--epoch_offset', '-o', type=int, default=0)
-    parser.add_argument('--datadir', '-d', type=str, default='data')
+    parser.add_argument('--model', type=str, default='models/VGG.py')
+    parser.add_argument('--gpu', type=int, default=0)
+    parser.add_argument('--epoch', type=int, default=50)
+    parser.add_argument('--batchsize', type=int, default=128)
+    parser.add_argument('--prefix', type=str)
+    parser.add_argument('--snapshot', type=int, default=10)
+    parser.add_argument('--restart_from', type=str)
+    parser.add_argument('--epoch_offset', type=int, default=0)
+    parser.add_argument('--datadir', type=str, default='data')
+    parser.add_argument('--flip', type=bool, default=True)
+    parser.add_argument('--shift', type=int, default=5)
+    parser.add_argument('--size', type=int, default=32)
+    parser.add_argument('--norm', type=bool, default=True)
     args = parser.parse_args()
 
     # create result dir
@@ -185,10 +189,10 @@ if __name__ == '__main__':
     N_test = test_data.shape[0]
 
     # augmentation setting
-    trans = Transform(flip=True,
-                      shift=5,
-                      size=(32, 32),
-                      norm=True)
+    trans = Transform(flip=args.flip,
+                      shift=args.shift,
+                      size=(args.size, args.size),
+                      norm=args.norm)
 
     logging.info('start training...')
 

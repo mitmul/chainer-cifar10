@@ -64,7 +64,10 @@ def get_model_optimizer(result_dir, args):
         model.to_gpu()
 
     # prepare optimizer
-    optimizer = optimizers.MomentumSGD(lr=args.lr, momentum=0.9)
+    if args.opt == 'MomentumSGD':
+        optimizer = optimizers.MomentumSGD(lr=args.lr, momentum=0.9)
+    if args.opt == 'Adam':
+        optimizer = optimizers.Adam()
     optimizer.setup(model.collect_parameters())
 
     return model, optimizer
@@ -115,7 +118,6 @@ def train(train_data, train_labels, N, model, optimizer, trans, args):
         optimizer.zero_grads()
         loss, acc = model.forward(x_batch, y_batch, train=True)
         loss.backward()
-        optimizer.weight_decay(decay=0.0005)
         optimizer.update()
 
         sum_loss += float(cuda.to_cpu(loss.data)) * args.batchsize
@@ -171,9 +173,10 @@ def eval(test_data, test_labels, N_test, model, args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, default='models/VGG_mini.py')
+    parser.add_argument('--model', type=str,
+                        default='models/VGG_mini_BN_PReLU.py')
     parser.add_argument('--gpu', type=int, default=0)
-    parser.add_argument('--epoch', type=int, default=50)
+    parser.add_argument('--epoch', type=int, default=100)
     parser.add_argument('--batchsize', type=int, default=64)
     parser.add_argument('--prefix', type=str)
     parser.add_argument('--snapshot', type=int, default=10)
@@ -181,12 +184,14 @@ if __name__ == '__main__':
     parser.add_argument('--epoch_offset', type=int, default=0)
     parser.add_argument('--datadir', type=str, default='data')
     parser.add_argument('--flip', type=bool, default=True)
-    parser.add_argument('--shift', type=int, default=5)
+    parser.add_argument('--shift', type=int, default=10)
     parser.add_argument('--size', type=int, default=32)
     parser.add_argument('--norm', type=bool, default=True)
-    parser.add_argument('--lr', type=float, default=0.1)
-    parser.add_argument('--lr_decay_freq', type=int, default=5)
-    parser.add_argument('--lr_decay_ratio', type=float, default=0.5)
+    parser.add_argument('--opt', type=str, default='Adam',
+                        choices=['MomentumSGD', 'Adam'])
+    parser.add_argument('--lr', type=float, default=0.001)
+    parser.add_argument('--lr_decay_freq', type=int, default=100)
+    parser.add_argument('--lr_decay_ratio', type=float, default=0.1)
     args = parser.parse_args()
 
     # create result dir

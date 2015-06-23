@@ -147,11 +147,11 @@ def eval(test_data, test_labels, N_test, model, args):
         y_batch = test_labels[i:i + args.batchsize]
 
         if args.norm:
-            x_batch = map(args.norm, x_batch)
+            x_batch = np.asarray(map(norm, x_batch))
 
         if args.gpu >= 0:
-            x_batch = cuda.to_gpu(x_batch)
-            y_batch = cuda.to_gpu(y_batch)
+            x_batch = cuda.to_gpu(x_batch.astype(np.float32))
+            y_batch = cuda.to_gpu(y_batch.astype(np.int32))
 
         loss, acc, _ = model.forward(x_batch, y_batch, train=False)
         sum_loss += float(cuda.to_cpu(loss.data)) * args.batchsize

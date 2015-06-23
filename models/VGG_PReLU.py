@@ -8,8 +8,9 @@ import chainer.functions as F
 class VGG(FunctionSet):
 
     """
-    VGGnet with Batch Normalization and Parameterized ReLU
-    - It works fine with Adam
+
+    VGGnet withParameterized ReLU
+
     """
 
     def __init__(self):
@@ -49,7 +50,7 @@ class VGG(FunctionSet):
             prelu6=F.PReLU(),
             fc7=F.Linear(4096, 4096),
             prelu7=F.PReLU(),
-            fc8=F.Linear(4096, 28)
+            fc8=F.Linear(4096, 10)
         )
 
     def forward(self, x_data, y_data, train=True):

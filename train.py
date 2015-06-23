@@ -209,7 +209,7 @@ if __name__ == '__main__':
         msg = 'epoch:{:02d}\ttrain mean loss={}, accuracy={}'.format(
             epoch + args.epoch_offset, sum_loss / N, sum_accuracy / N)
         logging.info(msg)
-        print(msg)
+        print('\n%s' % msg)
 
         # eval
         sum_loss, sum_accuracy = eval(test_data, test_labels, N_test,
@@ -217,7 +217,7 @@ if __name__ == '__main__':
         msg = 'epoch:{:02d}\ttest mean loss={}, accuracy={}'.format(
             epoch + args.epoch_offset, sum_loss / N_test, sum_accuracy / N_test)
         logging.info(msg)
-        print(msg)
+        print('\n%s' % msg)
 
         if epoch == 1 or epoch % args.snapshot == 0:
             model_fn = '%s/%s_epoch_%d.chainermodel' % (

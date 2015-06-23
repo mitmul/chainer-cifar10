@@ -19,25 +19,49 @@ from draw_loss import draw_loss_curve
 from progressbar import ProgressBar
 
 
-def get_model_optimizer(result_dir, model_name, gpu):
-    model_n = ''.join([n[0].upper() + n[1:] for n in model_name.split('_')])
-    module = imp.load_source(model_n, 'models/%s_model.py' % model_name)
-    Net = getattr(module, model_n)
+def create_result_dir(args):
+    if args.restart_from is None:
+        result_dir = 'results/' + os.path.basename(args.model).split('.')[0]
+        result_dir += '_' + time.strftime('%Y-%m-%d_%H-%M-%S_')
+        result_dir += str(time.time()).replace('.', '')
+        if not os.path.exists(result_dir):
+            os.makedirs(result_dir)
+        log_fn = '%s/log.txt' % result_dir
+        logging.basicConfig(filename=log_fn, level=logging.DEBUG)
+        logging.info(args)
+    else:
+        result_dir = '.'
+        log_fn = 'log.txt'
+        logging.basicConfig(filename=log_fn, level=logging.DEBUG)
+        logging.info(args)
 
-    shutil.copy('models/%s_model.py' % model_name,
-                '%s/%s_model.py' % (result_dir, model_name))
-    shutil.copy(__file__, '%s/train.py' % result_dir)
+    return log_fn, result_dir
 
-    # prepare model and optimizer
+def get_model_optimizer(result_dir, args):
+    model_fn = os.path.basename(args.model)
+    model_name = model_fn.split('.')[0]
+    module = imp.load_source(model_fn.split('.')[0], args.model)
+    Net = getattr(module, model_name)
+
+    dst = '%s/%s' % (result_dir, model_fn)
+    if not os.path.exists(dst):
+        shutil.copy(args.model, dst)
+
+    dst = '%s/%s' % (result_dir, os.path.basename(__file__))
+    if not os.path.exists(dst):
+        shutil.copy(__file__, dst)
+
+    # prepare model
     model = Net()
     if args.restart_from is not None:
-        if gpu >= 0:
-            cuda.init(gpu)
+        if args.gpu >= 0:
+            cuda.init(args.gpu)
         model = pickle.load(open(args.restart_from, 'rb'))
-    if gpu >= 0:
-        cuda.init(gpu)
+    if args.gpu >= 0:
+        cuda.init(args.gpu)
         model.to_gpu()
 
+    # prepare optimizer
     optimizer = optimizers.MomentumSGD(lr=0.01, momentum=0.9)
     optimizer.setup(model.collect_parameters())
 
@@ -111,12 +135,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # create result dir
-    result_dir = 'results/' + args.model + '_' + \
-        time.strftime('%Y-%m-%d_%H-%M-%S_') + \
-        str(time.time()).replace('.', '')
-    if not os.path.exists(result_dir):
-        os.makedirs(result_dir)
-    log_fn = '%s/log.txt' % result_dir
+    log_fn, result_dir = create_result_dir(args)
     logging.basicConfig(filename=log_fn, level=logging.DEBUG)
     logging.info(args)
 
@@ -128,9 +147,9 @@ if __name__ == '__main__':
 
     # augmentation setting
     trans = Transform(flip=True,
-                      shift=10,
+                      shift=5,
                       size=(32, 32),
-                      norm=False)
+                      norm=True)
 
     logging.info('start training...')
 
@@ -139,7 +158,7 @@ if __name__ == '__main__':
     batchsize = args.batchsize
     for epoch in range(1, n_epoch + 1):
         # train
-        if epoch % 20 == 0:
+        if epoch % 10 == 0:
             optimizer.lr *= 0.1
 
         sum_loss, sum_accuracy = train(
@@ -160,3 +179,4 @@ if __name__ == '__main__':
             pickle.dump(model, open(model_fn, 'wb'), -1)
 
         draw_loss_curve(log_fn, '%s/log.jpg' % result_dir)
+        print('learning rate:', optimizer.lr)

@@ -5,14 +5,14 @@ from chainer import Variable, FunctionSet
 import chainer.functions as F
 
 
-class Nin(FunctionSet):
+class NIN(FunctionSet):
 
     """
     Network In Network
     """
 
     def __init__(self):
-        super(Nin, self).__init__(
+        super(NIN, self).__init__(
             conv1=F.Convolution2D(3, 192, 5, stride=1, pad=2),
             bn1=F.BatchNormalization(192, decay=0.9, eps=1e-5),
             prelu1=F.PReLU(),

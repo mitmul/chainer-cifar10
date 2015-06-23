@@ -27,11 +27,16 @@ class Transform(object):
                 print('"size" attribute should be a tuple')
         if hasattr(self, 'norm'):
             if self.norm:
+                if not self._img.dtype == np.float32:
+                    self._img = self._img.astype(np.float32)
+                # local contrast normalization
                 for ch in range(self._img.shape[2]):
-                    self._img[ch] = (self._img[ch] - np.mean(self._img[ch])) / \
-                        (np.std(self._img[ch]) + np.finfo(np.float32).eps)
+                    im = self._img[:, :, ch]
+                    im = (im - np.mean(im)) / \
+                        (np.std(im) + np.finfo(np.float32).eps)
+                    self._img[:, :, ch] = im
 
-        return (self._img / 255.0).astype(np.float32)
+        return self._img.astype(np.float32)
 
     def rotate(self):
         angle = np.random.rand() * self.angle

@@ -37,6 +37,9 @@ def draw_loss_curve(logfile, outfile):
     train_acc = np.asarray(train_acc)
     test_acc = np.asarray(test_acc)
 
+    if not len(train_loss) > 1:
+        return
+
     fig, ax1 = plt.subplots()
     ax1.plot(train_loss[:, 0], train_loss[:, 1], label='training loss')
     ax1.plot(test_loss[:, 0], test_loss[:, 1], label='test loss')

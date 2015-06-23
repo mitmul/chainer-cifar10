@@ -38,7 +38,7 @@ def get_model_optimizer(result_dir, model_name, gpu):
         cuda.init(gpu)
         model.to_gpu()
 
-    optimizer = optimizers.Adam()
+    optimizer = optimizers.MomentumSGD(lr=0.01, momentum=0.9)
     optimizer.setup(model.collect_parameters())
 
     return model, optimizer
@@ -64,8 +64,9 @@ def train(train_data, train_labels, N, batchsize, model, optimizer, trans, gpu):
             y_batch = cuda.to_gpu(y_batch)
 
         optimizer.zero_grads()
-        loss, acc = model.forward(x_batch, y_batch)
+        loss, acc = model.forward(x_batch, y_batch, train=True)
         loss.backward()
+        optimizer.weight_decay(decay=0.0005)
         optimizer.update()
 
         sum_loss += float(cuda.to_cpu(loss.data)) * batchsize
@@ -77,7 +78,7 @@ def train(train_data, train_labels, N, batchsize, model, optimizer, trans, gpu):
 
 def eval(test_data, test_labels, N_test, batchsize, model, gpu):
     # evaluation
-    pbar = ProgressBar(N)
+    pbar = ProgressBar(N_test)
     sum_accuracy = 0
     sum_loss = 0
     for i in xrange(0, N_test, batchsize):
@@ -91,19 +92,19 @@ def eval(test_data, test_labels, N_test, batchsize, model, gpu):
         loss, acc, _ = model.forward(x_batch, y_batch, train=False)
         sum_loss += float(cuda.to_cpu(loss.data)) * batchsize
         sum_accuracy += float(cuda.to_cpu(acc.data)) * batchsize
-        pbar.update(i + batchsize if (i + batchsize) < N else N)
+        pbar.update(i + batchsize if (i + batchsize) < N_test else N_test)
 
     return sum_loss, sum_accuracy
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', '-m', type=str, default='cifar10_model')
-    parser.add_argument('--gpu', '-g', type=int, default=-1)
-    parser.add_argument('--epoch', '-e', type=int, default=20)
+    parser.add_argument('--model', '-m', type=str, default='vgg')
+    parser.add_argument('--gpu', '-g', type=int, default=0)
+    parser.add_argument('--epoch', '-e', type=int, default=50)
     parser.add_argument('--batchsize', '-b', type=int, default=128)
     parser.add_argument('--prefix', '-p', type=str)
-    parser.add_argument('--snapshot', '-s', type=int, default=5)
+    parser.add_argument('--snapshot', '-s', type=int, default=10)
     parser.add_argument('--restart_from', '-r', type=str)
     parser.add_argument('--epoch_offset', '-o', type=int, default=0)
     parser.add_argument('--datadir', '-d', type=str, default='data')
@@ -137,8 +138,10 @@ if __name__ == '__main__':
     n_epoch = args.epoch
     batchsize = args.batchsize
     for epoch in range(1, n_epoch + 1):
-
         # train
+        if epoch % 20 == 0:
+            optimizer.lr *= 0.1
+
         sum_loss, sum_accuracy = train(
             train_data, train_labels, N, batchsize, model,
             optimizer, trans, args.gpu)

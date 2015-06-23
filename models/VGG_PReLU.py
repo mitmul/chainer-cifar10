@@ -5,7 +5,7 @@ from chainer import Variable, FunctionSet
 import chainer.functions as F
 
 
-class VGG_PReLU(FunctionSet):
+class VGG(FunctionSet):
 
     """
     VGGnet with Batch Normalization and Parameterized ReLU
@@ -13,7 +13,7 @@ class VGG_PReLU(FunctionSet):
     """
 
     def __init__(self):
-        super(VGG_PReLU, self).__init__(
+        super(VGG, self).__init__(
             conv1_1=F.Convolution2D(3, 64, 3, stride=1, pad=1),
             prelu1_1=F.PReLU(),
             conv1_2=F.Convolution2D(64, 64, 3, stride=1, pad=1),
@@ -38,18 +38,18 @@ class VGG_PReLU(FunctionSet):
             conv4_3=F.Convolution2D(512, 512, 3, stride=1, pad=1),
             prelu4_3=F.PReLU(),
 
-            conv4_4=F.Convolution2D(512, 512, 3, stride=1, pad=1),
-            prelu4_4=F.PReLU(),
-            conv4_5=F.Convolution2D(512, 512, 3, stride=1, pad=1),
-            prelu4_5=F.PReLU(),
-            conv4_6=F.Convolution2D(512, 512, 3, stride=1, pad=1),
-            prelu4_6=F.PReLU(),
+            conv5_1=F.Convolution2D(512, 512, 3, stride=1, pad=1),
+            prelu5_1=F.PReLU(),
+            conv5_2=F.Convolution2D(512, 512, 3, stride=1, pad=1),
+            prelu5_2=F.PReLU(),
+            conv5_3=F.Convolution2D(512, 512, 3, stride=1, pad=1),
+            prelu5_3=F.PReLU(),
 
-            fc5=F.Linear(25088, 4096),
-            prelu5=F.PReLU(),
-            fc6=F.Linear(4096, 4096),
+            fc6=F.Linear(4608, 4096),
             prelu6=F.PReLU(),
-            fc7=F.Linear(4096, 28)
+            fc7=F.Linear(4096, 4096),
+            prelu7=F.PReLU(),
+            fc8=F.Linear(4096, 28)
         )
 
     def forward(self, x_data, y_data, train=True):
@@ -67,12 +67,12 @@ class VGG_PReLU(FunctionSet):
         h = self.prelu3_1(self.conv3_1(h))
         h = self.prelu3_2(self.conv3_2(h))
         h = self.prelu3_3(self.conv3_3(h))
-        h = F.max_pooling_2d(h, 2, stride=2)
+        h = F.max_pooling_2d(h, 2, stride=1)
 
         h = self.prelu4_1(self.conv4_1(h))
         h = self.prelu4_2(self.conv4_2(h))
         h = self.prelu4_3(self.conv4_3(h))
-        h = F.max_pooling_2d(h, 2, stride=2)
+        h = F.max_pooling_2d(h, 2, stride=1)
 
         h = self.prelu5_1(self.conv5_1(h))
         h = self.prelu5_2(self.conv5_2(h))

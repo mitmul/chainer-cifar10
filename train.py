@@ -17,6 +17,7 @@ from transform import Transform
 import cPickle as pickle
 from draw_loss import draw_loss_curve
 from progressbar import ProgressBar
+from multiprocessing import Process, Queue
 
 
 def create_result_dir(args):
@@ -36,6 +37,7 @@ def create_result_dir(args):
         logging.info(args)
 
     return log_fn, result_dir
+
 
 def get_model_optimizer(result_dir, args):
     model_fn = os.path.basename(args.model)
@@ -68,24 +70,43 @@ def get_model_optimizer(result_dir, args):
     return model, optimizer
 
 
-def train(train_data, train_labels, N, batchsize, model, optimizer, trans, gpu):
+def augmentation(x_batch_queue, aug_x_queue, trans):
+    while True:
+        x_batch = x_batch_queue.get()
+        if x_batch is None:
+            break
+
+        aug_x = []
+        for x in x_batch:
+            aug = trans.transform(x.transpose((1, 2, 0))).transpose((2, 0, 1))
+            aug_x.append(aug)
+        aug_x_queue.put(np.asarray(aug_x))
+
+
+def train(train_data, train_labels, N, model, optimizer, trans, args):
+    # for parallel augmentation
+    x_batch_queue = Queue()
+    aug_x_queue = Queue()
+    aug_worker = Process(target=augmentation,
+                         args=(x_batch_queue, aug_x_queue, trans))
+    aug_worker.start()
+
     # training
     pbar = ProgressBar(N)
     perm = np.random.permutation(N)
     sum_accuracy = 0
     sum_loss = 0
-    for i in range(0, N, batchsize):
-        x_batch = train_data[perm[i:i + batchsize]]
-        y_batch = train_labels[perm[i:i + batchsize]]
+    for i in range(0, N, args.batchsize):
+        x_batch = train_data[perm[i:i + args.batchsize]]
+        y_batch = train_labels[perm[i:i + args.batchsize]]
+
         # data augmentation
-        aug_x = []
-        for x in x_batch:
-            aug_x.append(
-                trans.transform(x.transpose((1, 2, 0))).transpose((2, 0, 1)))
-        aug_x = np.asarray(aug_x, dtype=np.float32)
-        if gpu >= 0:
-            x_batch = cuda.to_gpu(x_batch)
-            y_batch = cuda.to_gpu(y_batch)
+        x_batch_queue.put(x_batch)
+        aug_x = aug_x_queue.get()
+
+        if args.gpu >= 0:
+            x_batch = cuda.to_gpu(aug_x.astype(np.float32))
+            y_batch = cuda.to_gpu(y_batch.astype(np.int32))
 
         optimizer.zero_grads()
         loss, acc = model.forward(x_batch, y_batch, train=True)
@@ -93,29 +114,48 @@ def train(train_data, train_labels, N, batchsize, model, optimizer, trans, gpu):
         optimizer.weight_decay(decay=0.0005)
         optimizer.update()
 
-        sum_loss += float(cuda.to_cpu(loss.data)) * batchsize
-        sum_accuracy += float(cuda.to_cpu(acc.data)) * batchsize
-        pbar.update(i + batchsize if (i + batchsize) < N else N)
+        sum_loss += float(cuda.to_cpu(loss.data)) * args.batchsize
+        sum_accuracy += float(cuda.to_cpu(acc.data)) * args.batchsize
+        pbar.update(i + args.batchsize if (i + args.batchsize) < N else N)
+
+    x_batch_queue.put(None)
+    aug_worker.join()
 
     return sum_loss, sum_accuracy
 
 
-def eval(test_data, test_labels, N_test, batchsize, model, gpu):
+def norm(x):
+    if not x.dtype == np.float32:
+        x = x.astype(np.float32)
+    # local contrast normalization
+    for ch in range(x.shape[2]):
+        im = x[:, :, ch]
+        im = (im - np.mean(im)) / \
+            (np.std(im) + np.finfo(np.float32).eps)
+        x[:, :, ch] = im
+
+    return x
+
+
+def eval(test_data, test_labels, N_test, model, args):
     # evaluation
     pbar = ProgressBar(N_test)
     sum_accuracy = 0
     sum_loss = 0
-    for i in xrange(0, N_test, batchsize):
-        x_batch = test_data[i:i + batchsize]
-        y_batch = test_labels[i:i + batchsize]
+    for i in xrange(0, N_test, args.batchsize):
+        x_batch = test_data[i:i + args.batchsize]
+        y_batch = test_labels[i:i + args.batchsize]
 
-        if gpu >= 0:
+        if args.norm:
+            x_batch = map(norm, x_batch)
+
+        if args.gpu >= 0:
             x_batch = cuda.to_gpu(x_batch)
             y_batch = cuda.to_gpu(y_batch)
 
         loss, acc, _ = model.forward(x_batch, y_batch, train=False)
-        sum_loss += float(cuda.to_cpu(loss.data)) * batchsize
-        sum_accuracy += float(cuda.to_cpu(acc.data)) * batchsize
+        sum_loss += float(cuda.to_cpu(loss.data)) * args.batchsize
+        sum_accuracy += float(cuda.to_cpu(acc.data)) * args.batchsize
         pbar.update(i + batchsize if (i + batchsize) < N_test else N_test)
 
     return sum_loss, sum_accuracy
@@ -123,7 +163,7 @@ def eval(test_data, test_labels, N_test, batchsize, model, gpu):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', '-m', type=str, default='vgg')
+    parser.add_argument('--model', '-m', type=str, default='models/VGG.py')
     parser.add_argument('--gpu', '-g', type=int, default=0)
     parser.add_argument('--epoch', '-e', type=int, default=50)
     parser.add_argument('--batchsize', '-b', type=int, default=128)
@@ -136,12 +176,11 @@ if __name__ == '__main__':
 
     # create result dir
     log_fn, result_dir = create_result_dir(args)
-    logging.basicConfig(filename=log_fn, level=logging.DEBUG)
-    logging.info(args)
 
-    model, optimizer = get_model_optimizer(result_dir, args.model, args.gpu)
-    train_data, train_labels, test_data, test_labels = \
-        load_dataset(args.datadir)
+    # create model and optimizer
+    model, optimizer = get_model_optimizer(result_dir, args)
+    dataset = load_dataset(args.datadir)
+    train_data, train_labels, test_data, test_labels = dataset
     N = train_data.shape[0]
     N_test = test_data.shape[0]
 
@@ -161,17 +200,20 @@ if __name__ == '__main__':
         if epoch % 10 == 0:
             optimizer.lr *= 0.1
 
-        sum_loss, sum_accuracy = train(
-            train_data, train_labels, N, batchsize, model,
-            optimizer, trans, args.gpu)
-        logging.info('epoch:{:02d}\ttrain mean loss={}, accuracy={}'.format(
-            epoch + args.epoch_offset, sum_loss / N, sum_accuracy / N))
+        sum_loss, sum_accuracy = train(train_data, train_labels, N,
+                                       model, optimizer, trans, args)
+        msg = 'epoch:{:02d}\ttrain mean loss={}, accuracy={}'.format(
+            epoch + args.epoch_offset, sum_loss / N, sum_accuracy / N)
+        logging.info(msg)
+        print(msg)
 
         # eval
-        sum_loss, sum_accuracy = eval(
-            test_data, test_labels, N_test, batchsize, model, args.gpu)
-        logging.info('epoch:{:02d}\ttest mean loss={}, accuracy={}'.format(
-            epoch + args.epoch_offset, sum_loss / N_test, sum_accuracy / N_test))
+        sum_loss, sum_accuracy = eval(test_data, test_labels, N_test,
+                                      model, args)
+        msg = 'epoch:{:02d}\ttest mean loss={}, accuracy={}'.format(
+            epoch + args.epoch_offset, sum_loss / N_test, sum_accuracy / N_test)
+        logging.info(msg)
+        print(msg)
 
         if epoch == 1 or epoch % args.snapshot == 0:
             model_fn = '%s/%s_epoch_%d.chainermodel' % (

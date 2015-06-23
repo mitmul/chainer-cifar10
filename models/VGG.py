@@ -28,13 +28,13 @@ class VGG(FunctionSet):
             conv4_2=F.Convolution2D(512, 512, 3, stride=1, pad=1),
             conv4_3=F.Convolution2D(512, 512, 3, stride=1, pad=1),
 
-            conv4_4=F.Convolution2D(512, 512, 3, stride=1, pad=1),
-            conv4_5=F.Convolution2D(512, 512, 3, stride=1, pad=1),
-            conv4_6=F.Convolution2D(512, 512, 3, stride=1, pad=1),
+            conv5_1=F.Convolution2D(512, 512, 3, stride=1, pad=1),
+            conv5_2=F.Convolution2D(512, 512, 3, stride=1, pad=1),
+            conv5_3=F.Convolution2D(512, 512, 3, stride=1, pad=1),
 
-            fc5=F.Linear(25088, 4096),
-            fc6=F.Linear(4096, 4096),
-            fc7=F.Linear(4096, 28)
+            fc6=F.Linear(4608, 4096),
+            fc7=F.Linear(4096, 4096),
+            fc8=F.Linear(4096, 28)
         )
 
     def forward(self, x_data, y_data, train=True):
@@ -52,12 +52,12 @@ class VGG(FunctionSet):
         h = F.relu(self.conv3_1(h))
         h = F.relu(self.conv3_2(h))
         h = F.relu(self.conv3_3(h))
-        h = F.max_pooling_2d(h, 2, stride=2)
+        h = F.max_pooling_2d(h, 2, stride=1)
 
         h = F.relu(self.conv4_1(h))
         h = F.relu(self.conv4_2(h))
         h = F.relu(self.conv4_3(h))
-        h = F.max_pooling_2d(h, 2, stride=2)
+        h = F.max_pooling_2d(h, 2, stride=1)
 
         h = F.relu(self.conv5_1(h))
         h = F.relu(self.conv5_2(h))

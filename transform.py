@@ -36,7 +36,10 @@ class Transform(object):
                         (np.std(im) + np.finfo(np.float32).eps)
                     self._img[:, :, ch] = im
 
-        return self._img.astype(np.float32)
+        if not self._img.dtype == np.float32:
+            self._img = self._img.astype(np.float32)
+
+        return self._img
 
     def rotate(self):
         angle = np.random.rand() * self.angle

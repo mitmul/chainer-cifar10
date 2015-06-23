@@ -5,7 +5,7 @@ from chainer import Variable, FunctionSet
 import chainer.functions as F
 
 
-class VGG_BN(FunctionSet):
+class VGG(FunctionSet):
 
     """
     VGGnet with Batch Normalization and Parameterized ReLU
@@ -13,14 +13,14 @@ class VGG_BN(FunctionSet):
     """
 
     def __init__(self):
-        super(VGG_BN, self).__init__(
+        super(VGG, self).__init__(
             conv1_1=F.Convolution2D(3, 64, 3, stride=1, pad=1),
             conv1_2=F.Convolution2D(64, 64, 3, stride=1, pad=1),
-            bn1=F.BatchNormalization(64),
+            bn1=F.BatchNormalization(64, decay=0.9, eps=1e-5),
 
             conv2_1=F.Convolution2D(64, 128, 3, stride=1, pad=1),
             conv2_2=F.Convolution2D(128, 128, 3, stride=1, pad=1),
-            bn2=F.BatchNormalization(128),
+            bn2=F.BatchNormalization(64, decay=0.9, eps=1e-5),
 
             conv3_1=F.Convolution2D(128, 256, 3, stride=1, pad=1),
             conv3_2=F.Convolution2D(256, 256, 3, stride=1, pad=1),
@@ -30,13 +30,13 @@ class VGG_BN(FunctionSet):
             conv4_2=F.Convolution2D(512, 512, 3, stride=1, pad=1),
             conv4_3=F.Convolution2D(512, 512, 3, stride=1, pad=1),
 
-            conv4_4=F.Convolution2D(512, 512, 3, stride=1, pad=1),
-            conv4_5=F.Convolution2D(512, 512, 3, stride=1, pad=1),
-            conv4_6=F.Convolution2D(512, 512, 3, stride=1, pad=1),
+            conv5_1=F.Convolution2D(512, 512, 3, stride=1, pad=1),
+            conv5_2=F.Convolution2D(512, 512, 3, stride=1, pad=1),
+            conv5_3=F.Convolution2D(512, 512, 3, stride=1, pad=1),
 
-            fc5=F.Linear(25088, 4096),
-            fc6=F.Linear(4096, 4096),
-            fc7=F.Linear(4096, 28)
+            fc6=F.Linear(4608, 4096),
+            fc7=F.Linear(4096, 4096),
+            fc8=F.Linear(4096, 28)
         )
 
     def forward(self, x_data, y_data, train=True):
@@ -54,12 +54,12 @@ class VGG_BN(FunctionSet):
         h = F.relu(self.conv3_1(h))
         h = F.relu(self.conv3_2(h))
         h = F.relu(self.conv3_3(h))
-        h = F.max_pooling_2d(h, 2, stride=2)
+        h = F.max_pooling_2d(h, 2, stride=1)
 
         h = F.relu(self.conv4_1(h))
         h = F.relu(self.conv4_2(h))
         h = F.relu(self.conv4_3(h))
-        h = F.max_pooling_2d(h, 2, stride=2)
+        h = F.max_pooling_2d(h, 2, stride=1)
 
         h = F.relu(self.conv5_1(h))
         h = F.relu(self.conv5_2(h))

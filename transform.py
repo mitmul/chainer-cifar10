@@ -59,7 +59,7 @@ class Transform(object):
             self._img = self._img[dy:, :, :]
 
     def scale(self):
-        self._img = imresize(self._img, self.size)
+        self._img = imresize(self._img, self.size, 'nearest')
 
 
 if __name__ == '__main__':

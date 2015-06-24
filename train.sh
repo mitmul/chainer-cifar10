@@ -1,15 +1,15 @@
 #! /bin/bash
 
 python train.py \
---gpu 0 \
---model models/VGG_mini_BN_PReLU.py \
+--gpu 8 \
+--model models/VGG_mini_ABN.py \
 --epoch 1000 \
 --batchsize 128 \
---prefix VGG_mini_BN_PReLU_Adam \
+--prefix VGG_mini_ABN_Adam-0.0001 \
 --snapshot 10 \
 --datadir data \
---flip TRUE \
---shift 5 \
+--flip 1 \
+--shift 10 \
 --size 32 \
---norm True \
+--norm 0 \
 --opt Adam

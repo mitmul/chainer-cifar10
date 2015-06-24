@@ -67,9 +67,9 @@ def get_model_optimizer(result_dir, args):
     if args.opt == 'MomentumSGD':
         optimizer = optimizers.MomentumSGD(lr=args.lr, momentum=0.9)
     elif args.opt == 'Adam':
-        optimizer = optimizers.Adam(alpha=0.0001)
+        optimizer = optimizers.Adam(alpha=args.alpha)
     elif args.opt == 'AdaGrad':
-        optimizer = optimizers.AdaGrad(alpha=args.lr)
+        optimizer = optimizers.AdaGrad(lr=args.lr)
     else:
         raise Exception('No optimizer is selected')
     optimizer.setup(model.collect_parameters())
@@ -105,10 +105,12 @@ def train(train_data, train_labels, N, model, optimizer, trans, args):
     sum_loss = 0
     for i in range(0, N, args.batchsize):
         x_batch = train_data[perm[i:i + args.batchsize]]
-        y_batch = train_labels[perm[i:i + args.batchsize]]
 
         # data augmentation
         x_batch_queue.put(x_batch)
+
+    for i in range(0, N, args.batchsize):
+        y_batch = train_labels[perm[i:i + args.batchsize]]
         aug_x = aug_x_queue.get()
 
         if args.gpu >= 0:
@@ -172,23 +174,24 @@ def validate(test_data, test_labels, N_test, model, args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str,
-                        default='models/VGG_mini_BN_PReLU.py')
-    parser.add_argument('--gpu', type=int, default=0)
-    parser.add_argument('--epoch', type=int, default=1000)
+                        default='models/VGG_mini_ABN.py')
+    parser.add_argument('--gpu', type=int, default=7)
+    parser.add_argument('--epoch', type=int, default=100)
     parser.add_argument('--batchsize', type=int, default=128)
     parser.add_argument('--prefix', type=str,
-                        default='VGG_mini_BN_PReLU_Adam')
+                        default='VGG_mini_ABN_Adam')
     parser.add_argument('--snapshot', type=int, default=10)
     parser.add_argument('--restart_from', type=str)
     parser.add_argument('--epoch_offset', type=int, default=0)
     parser.add_argument('--datadir', type=str, default='data')
-    parser.add_argument('--flip', type=bool, default=True)
+    parser.add_argument('--flip', type=int, default=1)
     parser.add_argument('--shift', type=int, default=10)
     parser.add_argument('--size', type=int, default=32)
-    parser.add_argument('--norm', type=bool, default=True)
+    parser.add_argument('--norm', type=int, default=False)
     parser.add_argument('--opt', type=str, default='Adam',
                         choices=['MomentumSGD', 'Adam', 'AdaGrad'])
     parser.add_argument('--weight_decay', type=float, default=0.0005)
+    parser.add_argument('--alpha', type=float, default=0.0001)
     parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--lr_decay_freq', type=int, default=100)
     parser.add_argument('--lr_decay_ratio', type=float, default=0.1)
@@ -205,10 +208,13 @@ if __name__ == '__main__':
     N_test = test_data.shape[0]
 
     # augmentation setting
-    trans = Transform(flip=args.flip,
+    _flip = bool(args.flip)
+    _norm = bool(args.norm)
+    logging.info('flip:{}\tnorm:{}'.format(_flip, _norm))
+    trans = Transform(flip=_flip,
                       shift=args.shift,
                       size=(args.size, args.size),
-                      norm=args.norm)
+                      norm=_norm)
     logging.info('start training...')
 
     # learning loop

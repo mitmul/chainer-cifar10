@@ -30,13 +30,21 @@ $ python train.py
 See the help messages with --help option for details.
 
 You can choose model file to be trained from models dir. Cifar10, Network In Network (NIN), and VGG-net (with some variants) are already prepared. The architecture of VGG_mini is derived from [here](https://github.com/nagadomi/kaggle-cifar10-torch7). The original paper of VGG-net is found in [here](http://arxiv.org/pdf/1409.1556.pdf).
-<!--
-## Results
 
-- VGG_mini model train by MomentumSGD (with all default values) shows the below results
--->
+## Models
 
-<!-- ![loss curve](loss.jpg) -->
+- There are two types of base architectures
+    - VGG (similar to original VGG-net)
+    - VGG_mini (same as [nagadomi](https://github.com/nagadomi/kaggle-cifar10-torch7)'s model)
+- Variants are different at Batch Normalization and Parameterized ReLU
+    - BN: Batch Normalization for first two blocks of convolutional layer
+    - ABN: Batch Normalization for all convolutional layers
+    - PReLU: Parameterized ReLU for all activation functions
+
+- VGG_mini_PReLU doesn't perform well.
+- Default setting (`$ python train.py`)  produces the below result:
+
+![loss curve](loss.jpg)
 
 ## Draw Loss Curve
 

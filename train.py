@@ -219,8 +219,10 @@ if __name__ == '__main__':
     batchsize = args.batchsize
     for epoch in range(1, n_epoch + 1):
         # train
-        if epoch % args.lr_decay_freq == 0:
-            optimizer.lr *= lr_decay_ratio
+        if args.opt == 'MomentumSGD':
+            print('learning rate:', optimizer.lr)
+            if epoch % args.lr_decay_freq == 0:
+                optimizer.lr *= lr_decay_ratio
 
         sum_loss, sum_accuracy = train(train_data, train_labels, N,
                                        model, optimizer, trans, args)
@@ -243,4 +245,3 @@ if __name__ == '__main__':
             pickle.dump(model, open(model_fn, 'wb'), -1)
 
         draw_loss_curve(log_fn, '%s/log.jpg' % result_dir)
-        print('learning rate:', optimizer.lr)

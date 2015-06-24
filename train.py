@@ -179,8 +179,9 @@ if __name__ == '__main__':
                         default='models/VGG_mini_BN_PReLU.py')
     parser.add_argument('--gpu', type=int, default=0)
     parser.add_argument('--epoch', type=int, default=100)
-    parser.add_argument('--batchsize', type=int, default=64)
-    parser.add_argument('--prefix', type=str)
+    parser.add_argument('--batchsize', type=int, default=128)
+    parser.add_argument('--prefix', type=str,
+                        default='VGG_mini_BN_PReLU_Adam')
     parser.add_argument('--snapshot', type=int, default=10)
     parser.add_argument('--restart_from', type=str)
     parser.add_argument('--epoch_offset', type=int, default=0)

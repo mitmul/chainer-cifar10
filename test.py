@@ -11,7 +11,7 @@ from transform import Transform
 import cPickle as pickle
 import numpy as np
 import argparse
-from train import eval
+from train import norm
 from progressbar import ProgressBar
 
 
@@ -65,6 +65,7 @@ def validate(test_data, test_labels, N_test, model, args):
     pbar = ProgressBar(N_test)
     sum_accuracy = 0
     sum_loss = 0
+    sum_correct = 0
     for i in range(0, N_test, args.batchsize):
         x_batch = test_data[i:i + args.batchsize]
         y_batch = test_labels[i:i + args.batchsize]
@@ -77,9 +78,18 @@ def validate(test_data, test_labels, N_test, model, args):
             y_batch = cuda.to_gpu(y_batch.astype(np.int32))
 
         loss, acc, pred = model.forward(x_batch, y_batch, train=False)
+
+        pred = cuda.to_cpu(F.softmax(pred).data)
+        pred = np.argmax(pred, axis=1)
+        label = cuda.to_cpu(y_batch)
+        sum_correct += np.sum(np.array(pred == label))
+
         sum_loss += float(cuda.to_cpu(loss.data)) * args.batchsize
         sum_accuracy += float(cuda.to_cpu(acc.data)) * args.batchsize
         pbar.update(i + batchsize if (i + batchsize) < N_test else N_test)
+
+    print('correct num:{}\t# of test images:{}'.format(sum_correct, N_test))
+    print('correct rate:{}'.format(float(sum_correct) / float(N_test)))
 
     return sum_loss, sum_accuracy
 
@@ -110,7 +120,7 @@ if __name__ == '__main__':
     batchsize = 128
 
     if args.eval == 'normal':
-        sum_loss, sum_accuracy = eval(
+        sum_loss, sum_accuracy = validate(
             test_data, test_labels, N_test, model, args)
         print('test mean loss={}, accuracy={}'.format(
             sum_loss / N_test, sum_accuracy / N_test))

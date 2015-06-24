@@ -36,7 +36,7 @@ You can choose model file to be trained from models dir. Cifar10, Network In Net
 - VGG_mini model train by MomentumSGD (with all default values) shows the below results
 -->
 
-![loss curve](loss.jpg)
+<!-- ![loss curve](loss.jpg) -->
 
 ## Draw Loss Curve
 

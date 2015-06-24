@@ -66,8 +66,10 @@ def get_model_optimizer(result_dir, args):
     # prepare optimizer
     if args.opt == 'MomentumSGD':
         optimizer = optimizers.MomentumSGD(lr=args.lr, momentum=0.9)
-    if args.opt == 'Adam':
-        optimizer = optimizers.Adam()
+    elif args.opt == 'Adam':
+        optimizer = optimizers.Adam(alpha=0.0001)
+    else:
+        raise Exception('No optimizer is selected')
     optimizer.setup(model.collect_parameters())
 
     return model, optimizer

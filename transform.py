@@ -3,7 +3,7 @@
 
 import cv2 as cv
 import numpy as np
-from scipy.misc import imrotate, imresize
+from scipy.misc import imresize
 from scipy.ndimage.interpolation import shift
 
 
@@ -14,8 +14,6 @@ class Transform(object):
 
     def transform(self, img):
         self._img = img
-        if hasattr(self, 'angle'):
-            self.rotate()
         if hasattr(self, 'flip'):
             self.fliplr()
         if hasattr(self, 'shift'):
@@ -41,16 +39,6 @@ class Transform(object):
 
         return self._img
 
-    def rotate(self):
-        angle = np.random.rand() * self.angle
-        self._img = imrotate(self._img, angle, 'nearest')
-        crop_v = int(
-            np.floor(np.abs(self._img.shape[1] * np.sin(np.radians(angle)))))
-        crop_h = int(
-            np.floor(np.abs(self._img.shape[0] * np.sin(np.radians(angle)))))
-        h, w, c = self._img.shape
-        self._img = self._img[crop_v + 1:h - crop_v, crop_h + 1:w - crop_h, :]
-
     def fliplr(self):
         if np.random.randint(2) == 1 and self.flip == True:
             self._img = np.fliplr(self._img)
@@ -71,7 +59,7 @@ class Transform(object):
             self._img = self._img[dy:, :, :]
 
     def scale(self):
-        self._img = imresize(self._img, self.size, 'nearest')
+        self._img = imresize(self._img, self.size)
 
 
 if __name__ == '__main__':

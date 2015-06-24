@@ -68,6 +68,8 @@ def get_model_optimizer(result_dir, args):
         optimizer = optimizers.MomentumSGD(lr=args.lr, momentum=0.9)
     elif args.opt == 'Adam':
         optimizer = optimizers.Adam(alpha=0.0001)
+    elif args.opt == 'AdaGrad':
+        optimizer = optimizers.AdaGrad(alpha=args.lr)
     else:
         raise Exception('No optimizer is selected')
     optimizer.setup(model.collect_parameters())
@@ -120,6 +122,8 @@ def train(train_data, train_labels, N, model, optimizer, trans, args):
         optimizer.zero_grads()
         loss, acc = model.forward(x_batch, y_batch, train=True)
         loss.backward()
+        if args.opt in ['AdaGrad', 'MomentumSGD']:
+            optimizer.weight_decay(decay=args.decay)
         optimizer.update()
 
         sum_loss += float(cuda.to_cpu(loss.data)) * args.batchsize
@@ -145,8 +149,8 @@ def norm(x):
     return x
 
 
-def eval(test_data, test_labels, N_test, model, args):
-    # evaluation
+def validate(test_data, test_labels, N_test, model, args):
+    # validate
     pbar = ProgressBar(N_test)
     sum_accuracy = 0
     sum_loss = 0
@@ -174,7 +178,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str,
                         default='models/VGG_mini_BN_PReLU.py')
     parser.add_argument('--gpu', type=int, default=0)
-    parser.add_argument('--epoch', type=int, default=100)
+    parser.add_argument('--epoch', type=int, default=1000)
     parser.add_argument('--batchsize', type=int, default=128)
     parser.add_argument('--prefix', type=str,
                         default='VGG_mini_BN_PReLU_Adam')
@@ -187,8 +191,9 @@ if __name__ == '__main__':
     parser.add_argument('--size', type=int, default=32)
     parser.add_argument('--norm', type=bool, default=True)
     parser.add_argument('--opt', type=str, default='Adam',
-                        choices=['MomentumSGD', 'Adam'])
-    parser.add_argument('--lr', type=float, default=0.001)
+                        choices=['MomentumSGD', 'Adam', 'AdaGrad'])
+    parser.add_argument('--weight_decay', type=float, default=0.0005)
+    parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--lr_decay_freq', type=int, default=100)
     parser.add_argument('--lr_decay_ratio', type=float, default=0.1)
     args = parser.parse_args()
@@ -207,7 +212,7 @@ if __name__ == '__main__':
     trans = Transform(flip=args.flip,
                       shift=args.shift,
                       size=(args.size, args.size),
-                      norm = args.norm)
+                      norm=args.norm)
     logging.info('start training...')
 
     # learning loop
@@ -227,9 +232,9 @@ if __name__ == '__main__':
         logging.info(msg)
         print('\n%s' % msg)
 
-        # eval
-        sum_loss, sum_accuracy = eval(test_data, test_labels, N_test,
-                                      model, args)
+        # validate
+        sum_loss, sum_accuracy = validate(test_data, test_labels, N_test,
+                                          model, args)
         msg = 'epoch:{:02d}\ttest mean loss={}, accuracy={}'.format(
             epoch + args.epoch_offset, sum_loss / N_test, sum_accuracy / N_test)
         logging.info(msg)

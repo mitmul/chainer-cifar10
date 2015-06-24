@@ -12,7 +12,7 @@ import cPickle as pickle
 import numpy as np
 import cv2 as cv
 import argparse
-from train import norm
+from train import eval
 from progressbar import ProgressBar
 
 
@@ -61,63 +61,6 @@ def aug_eval(test_data, test_labels, N_test, model, gpu=0):
     print sum_correct / float(N_test)
 
     return sum_accuracy
-
-
-def single_eval(test_data, test_labels, N_test, model, args):
-    # evaluation
-    sum_accuracy = 0
-    sum_loss = 0
-    sum_correct = 0
-    for i in xrange(0, N_test + args.batchsize, args.batchsize):
-        if i + args.batchsize >= N_test:
-            x_batch = test_data[N_test - args.batchsize:]
-            y_batch = test_labels[N_test - args.batchsize:]
-        else:
-            x_batch = test_data[i:i + args.batchsize]
-            y_batch = test_labels[i:i + args.batchsize]
-
-        if args.norm:
-            x_batch = np.asarray(map(norm, x_batch))
-
-        if args.gpu >= 0:
-            x_batch = cuda.to_gpu(x_batch.astype(np.float32))
-            y_batch = cuda.to_gpu(y_batch.astype(np.int32))
-
-        loss, acc, pred = model.forward(x_batch, y_batch, train=False)
-        sum_loss += float(cuda.to_cpu(loss.data)) * args.batchsize
-        sum_accuracy += float(cuda.to_cpu(acc.data)) * args.batchsize
-
-        pred = cuda.to_cpu(pred.data).argmax(axis=1)
-        labels = test_labels[i:i + batchsize]
-
-        sum_correct += np.sum(pred == labels)
-        print sum_correct / float(i + 1), sum_accuracy / float(i + 1)
-
-    return sum_loss, sum_accuracy
-
-
-def eval(test_data, test_labels, N_test, model, args):
-    # evaluation
-    pbar = ProgressBar(N_test)
-    sum_accuracy = 0
-    sum_loss = 0
-    for i in xrange(0, N_test, args.batchsize):
-        x_batch = train_data[i:i + args.batchsize]
-        y_batch = train_labels[i:i + args.batchsize]
-
-        if args.norm:
-            x_batch = np.asarray(map(norm, x_batch))
-
-        if args.gpu >= 0:
-            x_batch = cuda.to_gpu(x_batch.astype(np.float32))
-            y_batch = cuda.to_gpu(y_batch.astype(np.int32))
-
-        loss, acc, pred = model.forward(x_batch, y_batch, train=False)
-        sum_loss += float(cuda.to_cpu(loss.data)) * args.batchsize
-        sum_accuracy += float(cuda.to_cpu(acc.data)) * args.batchsize
-        pbar.update(i + batchsize if (i + batchsize) < N_test else N_test)
-
-    return sum_loss, sum_accuracy
 
 
 if __name__ == '__main__':

@@ -55,7 +55,7 @@ if __name__ == '__main__':
     labels = _labels.reshape((labels.shape[0] * labels.shape[1]))
 
     num, dim = data.shape
-    train_data = data.reshape((num, 3, 32, 32)).astype(np.float32) / 255.0
+    train_data = data.reshape((num, 3, 32, 32)).astype(np.float32)
     train_labels = labels.astype(np.int32)
 
     np.save('%s/train_data' % args.outdir, train_data)
@@ -65,7 +65,7 @@ if __name__ == '__main__':
 
     data = np.asarray(test['data'])
     num, dim = data.shape
-    test_data = data.reshape((num, 3, 32, 32)).astype(np.float32) / 255.0
+    test_data = data.reshape((num, 3, 32, 32)).astype(np.float32)
     test_labels = np.asarray(test['labels'], dtype=np.int32)
 
     np.save('%s/test_data' % args.outdir, test_data)

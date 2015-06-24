@@ -103,13 +103,9 @@ def train(train_data, train_labels, N, model, optimizer, trans, args):
     perm = np.random.permutation(N)
     sum_accuracy = 0
     sum_loss = 0
-    for i in range(0, N + args.batchsize, args.batchsize):
-        if i + args.batchsize >= N:
-            x_batch = train_data[perm[N - args.batchsize:]]
-            y_batch = train_labels[perm[N - args.batchsize:]]
-        else:
-            x_batch = train_data[perm[i:i + args.batchsize]]
-            y_batch = train_labels[perm[i:i + args.batchsize]]
+    for i in range(0, N, args.batchsize):
+        x_batch = train_data[perm[i:i + args.batchsize]]
+        y_batch = train_labels[perm[i:i + args.batchsize]]
 
         # data augmentation
         x_batch_queue.put(x_batch)

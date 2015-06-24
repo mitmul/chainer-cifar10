@@ -4,13 +4,12 @@
 import os
 import sys
 import imp
-from chainer import cuda, Variable
+from chainer import cuda
 import chainer.functions as F
 from dataset import load_dataset
 from transform import Transform
 import cPickle as pickle
 import numpy as np
-import cv2 as cv
 import argparse
 from train import eval
 from progressbar import ProgressBar
@@ -22,7 +21,7 @@ def aug_eval(test_data, test_labels, N_test, model, gpu=0):
     n_dup = 1
     sum_correct = 0
     pbar = ProgressBar(N_test)
-    for i in xrange(N_test):
+    for i in range(N_test):
         single_x = test_data[i]
         single_y = test_labels[i]
 
@@ -42,9 +41,7 @@ def aug_eval(test_data, test_labels, N_test, model, gpu=0):
 
         _, _, pred = model.forward(aug_x, aug_y, train=False)
         mean_pred = cuda.to_cpu(F.softmax(pred).data)
-        print np.argmax(mean_pred, axis=1)
         mean_pred = np.mean(mean_pred, axis=0)
-        print mean_pred
         pred = np.argmax(mean_pred)
         true = cuda.to_cpu(aug_y)[0]
         sys.exit()
@@ -53,14 +50,38 @@ def aug_eval(test_data, test_labels, N_test, model, gpu=0):
             sum_correct += 1
 
         if i % 100 == 0:
-            print i, n_dup, N_test, sum_correct / float(i + 1)
+            print(i, n_dup, N_test, sum_correct / float(i + 1))
 
         pbar.update(i + args.batchsize
                     if (i + args.batchsize) < N_test else N_test)
 
-    print sum_correct / float(N_test)
+    print(sum_correct / float(N_test))
 
     return sum_accuracy
+
+
+def validate(test_data, test_labels, N_test, model, args):
+    # validate
+    pbar = ProgressBar(N_test)
+    sum_accuracy = 0
+    sum_loss = 0
+    for i in range(0, N_test, args.batchsize):
+        x_batch = test_data[i:i + args.batchsize]
+        y_batch = test_labels[i:i + args.batchsize]
+
+        if args.norm:
+            x_batch = np.asarray(map(norm, x_batch))
+
+        if args.gpu >= 0:
+            x_batch = cuda.to_gpu(x_batch.astype(np.float32))
+            y_batch = cuda.to_gpu(y_batch.astype(np.int32))
+
+        loss, acc, pred = model.forward(x_batch, y_batch, train=False)
+        sum_loss += float(cuda.to_cpu(loss.data)) * args.batchsize
+        sum_accuracy += float(cuda.to_cpu(acc.data)) * args.batchsize
+        pbar.update(i + batchsize if (i + batchsize) < N_test else N_test)
+
+    return sum_loss, sum_accuracy
 
 
 if __name__ == '__main__':
@@ -99,8 +120,3 @@ if __name__ == '__main__':
             test_data, test_labels, N_test, model, args)
         print('test aug mean accuracy={}'.format(
             sum_accuracy / float(N_test)))
-
-    if args.eval == 'single':
-        sum_accuracy = single_eval(
-            test_data, test_labels, N_test, model, gpu)
-        print('test aug mean accuracy={}'.format(sum_accuracy / float(N_test)))

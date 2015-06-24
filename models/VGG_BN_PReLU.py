@@ -84,8 +84,6 @@ class VGG_BN_PReLU(FunctionSet):
         h = self.prelu5_3(self.conv5_3(h))
         h = F.max_pooling_2d(h, 2, stride=1)
 
-        print h.data.shape
-
         h = F.dropout(self.prelu6(self.fc6(h)), train=train, ratio=0.5)
         h = F.dropout(self.prelu7(self.fc7(h)), train=train, ratio=0.5)
         h = self.fc8(h)

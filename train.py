@@ -150,13 +150,9 @@ def eval(test_data, test_labels, N_test, model, args):
     pbar = ProgressBar(N_test)
     sum_accuracy = 0
     sum_loss = 0
-    for i in xrange(0, N_test + args.batchsize, args.batchsize):
-        if i + args.batchsize >= N:
-            x_batch = train_data[N - args.batchsize:]
-            y_batch = train_labels[N - args.batchsize:]
-        else:
-            x_batch = train_data[i:i + args.batchsize]
-            y_batch = train_labels[i:i + args.batchsize]
+    for i in xrange(0, N_test, args.batchsize):
+        x_batch = train_data[i:i + args.batchsize]
+        y_batch = train_labels[i:i + args.batchsize]
 
         if args.norm:
             x_batch = np.asarray(map(norm, x_batch))

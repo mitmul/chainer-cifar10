@@ -16,54 +16,11 @@ from train import norm
 from progressbar import ProgressBar
 
 
-def single_eval(test_data, test_labels, N_test, model, gpu=0):
-    n_dup = 1
-    sum_accuracy = 0
-    for i in xrange(N_test):
-        single_x = test_data[i]
-        single_y = test_labels[i]
-
-        single_x = np.tile(single_x, (n_dup, 1, 1, 1)).astype(np.float32)
-        single_y = np.tile(single_y, (n_dup,)).astype(np.int32)
-
-        if gpu >= 0:
-            single_x = cuda.to_gpu(single_x)
-            single_y = cuda.to_gpu(single_y)
-
-        _, _, pred = model.forward(single_x, single_y, train=False)
-        pred = cuda.to_cpu(F.softmax(pred).data)[0]
-
-        pred_class = np.argmax(pred)
-        true_class = test_labels[i]
-
-        if pred_class == true_class:
-            sum_accuracy += 1
-        else:
-            if not os.path.exists('%d' % test_labels[i]):
-                os.mkdir('%d' % test_labels[i])
-
-            cv.imwrite('%d/%d-%d.jpg' % (test_labels[i], pred_class, i),
-                       test_data[i].transpose((1, 2, 0)) * 255)
-
-        if i % 100 == 0:
-            print i, N_test, sum_accuracy / float(i + 1)
-
-    return sum_accuracy
-
-
 def aug_eval(test_data, test_labels, N_test, model, gpu=0):
-    # trans = Transform(angle=15,
-    #                   flip=True,
-    #                   shift=10,
-    #                   size=(32, 32),
-    #                   norm=False)
-    trans = Transform(flip=True,
-                      shift=10,
-                      size=(32, 32),
-                      norm = True)
+    trans = Transform(norm=True)
     # evaluation
-    n_dup = 64
-    sum_accuracy = 0
+    n_dup = 1
+    sum_correct = 0
     pbar = ProgressBar(N_test)
     for i in xrange(N_test):
         single_x = test_data[i]
@@ -85,15 +42,18 @@ def aug_eval(test_data, test_labels, N_test, model, gpu=0):
 
         _, _, pred = model.forward(aug_x, aug_y, train=False)
         mean_pred = cuda.to_cpu(F.softmax(pred).data)
-        mean_pred = np.sum(mean_pred, axis=0)
+        print np.argmax(mean_pred, axis=1)
+        mean_pred = np.mean(mean_pred, axis=0)
+        print mean_pred
         pred = np.argmax(mean_pred)
         true = cuda.to_cpu(aug_y)[0]
+        sys.exit()
 
         if pred == true:
-            sum_accuracy += 1
+            sum_correct += 1
 
         if i % 100 == 0:
-            print i, n_dup, N_test, sum_accuracy / float(i + 1)
+            print i, n_dup, N_test, sum_correct / float(i + 1)
 
         pbar.update(i + args.batchsize
                     if (i + args.batchsize) < N_test else N_test)
@@ -103,7 +63,7 @@ def aug_eval(test_data, test_labels, N_test, model, gpu=0):
     return sum_accuracy
 
 
-def eval(test_data, test_labels, N_test, model, args):
+def single_eval(test_data, test_labels, N_test, model, args):
     # evaluation
     sum_accuracy = 0
     sum_loss = 0
@@ -131,7 +91,31 @@ def eval(test_data, test_labels, N_test, model, args):
         labels = test_labels[i:i + batchsize]
 
         sum_correct += np.sum(pred == labels)
-        print sum_correct / float(N_test)
+        print sum_correct / float(i + 1), sum_accuracy / float(i + 1)
+
+    return sum_loss, sum_accuracy
+
+
+def eval(test_data, test_labels, N_test, model, args):
+    # evaluation
+    pbar = ProgressBar(N_test)
+    sum_accuracy = 0
+    sum_loss = 0
+    for i in xrange(0, N_test, args.batchsize):
+        x_batch = train_data[i:i + args.batchsize]
+        y_batch = train_labels[i:i + args.batchsize]
+
+        if args.norm:
+            x_batch = np.asarray(map(norm, x_batch))
+
+        if args.gpu >= 0:
+            x_batch = cuda.to_gpu(x_batch.astype(np.float32))
+            y_batch = cuda.to_gpu(y_batch.astype(np.int32))
+
+        loss, acc, pred = model.forward(x_batch, y_batch, train=False)
+        sum_loss += float(cuda.to_cpu(loss.data)) * args.batchsize
+        sum_accuracy += float(cuda.to_cpu(acc.data)) * args.batchsize
+        pbar.update(i + batchsize if (i + batchsize) < N_test else N_test)
 
     return sum_loss, sum_accuracy
 

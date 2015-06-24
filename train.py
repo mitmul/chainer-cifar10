@@ -2,16 +2,16 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function
+import sys
+sys.path.append('../../')
 import argparse
 import logging
 import time
 import os
-import sys
 import imp
 import shutil
 import numpy as np
-from chainer import optimizers, cuda, Variable
-import chainer.functions as F
+from chainer import optimizers, cuda
 from dataset import load_dataset
 from transform import Transform
 import cPickle as pickle
@@ -165,7 +165,7 @@ def eval(test_data, test_labels, N_test, model, args):
             x_batch = cuda.to_gpu(x_batch.astype(np.float32))
             y_batch = cuda.to_gpu(y_batch.astype(np.int32))
 
-        loss, acc, _ = model.forward(x_batch, y_batch, train=False)
+        loss, acc, pred = model.forward(x_batch, y_batch, train=False)
         sum_loss += float(cuda.to_cpu(loss.data)) * args.batchsize
         sum_accuracy += float(cuda.to_cpu(acc.data)) * args.batchsize
         pbar.update(i + batchsize if (i + batchsize) < N_test else N_test)
@@ -222,7 +222,7 @@ if __name__ == '__main__':
         if args.opt == 'MomentumSGD':
             print('learning rate:', optimizer.lr)
             if epoch % args.lr_decay_freq == 0:
-                optimizer.lr *= lr_decay_ratio
+                optimizer.lr *= args.lr_decay_ratio
 
         sum_loss, sum_accuracy = train(train_data, train_labels, N,
                                        model, optimizer, trans, args)

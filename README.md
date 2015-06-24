@@ -30,11 +30,11 @@ $ python train.py
 See the help messages with --help option for details.
 
 You can choose model file to be trained from models dir. Cifar10, Network In Network (NIN), and VGG-net (with some variants) are already prepared. The architecture of VGG_mini is derived from [here](https://github.com/nagadomi/kaggle-cifar10-torch7). The original paper of VGG-net is found in [here](http://arxiv.org/pdf/1409.1556.pdf).
-
+<!-- 
 ## Results
 
 - VGG_mini model train by MomentumSGD (with all default values) shows the below results
-    - 
+    - -->
 
 ![loss curve](loss.jpg)
 

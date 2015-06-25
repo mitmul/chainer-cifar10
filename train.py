@@ -156,7 +156,7 @@ def validate(test_data, test_labels, N_test, model, args):
         x_batch = test_data[i:i + args.batchsize]
         y_batch = test_labels[i:i + args.batchsize]
 
-        if args.norm:
+        if args.norm == 1:
             x_batch = np.asarray(map(norm, x_batch))
 
         if args.gpu >= 0:
@@ -187,7 +187,7 @@ if __name__ == '__main__':
     parser.add_argument('--flip', type=int, default=1)
     parser.add_argument('--shift', type=int, default=10)
     parser.add_argument('--size', type=int, default=32)
-    parser.add_argument('--norm', type=int, default=False)
+    parser.add_argument('--norm', type=int, default=0)
     parser.add_argument('--opt', type=str, default='Adam',
                         choices=['MomentumSGD', 'Adam', 'AdaGrad'])
     parser.add_argument('--weight_decay', type=float, default=0.0005)

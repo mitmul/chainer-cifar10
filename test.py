@@ -8,7 +8,7 @@ from chainer import cuda
 import chainer.functions as F
 from dataset import load_dataset
 from transform import Transform
-import cPickle as pickle
+import pickle
 import numpy as np
 import argparse
 from train import norm
@@ -70,7 +70,7 @@ def validate(test_data, test_labels, N_test, model, args):
         x_batch = test_data[i:i + args.batchsize]
         y_batch = test_labels[i:i + args.batchsize]
 
-        if args.norm:
+        if args.norm == 1:
             x_batch = np.asarray(map(norm, x_batch))
 
         if args.gpu >= 0:
@@ -100,7 +100,7 @@ if __name__ == '__main__':
                         choices=['normal', 'aug', 'single'])
     parser.add_argument('--model', type=str)
     parser.add_argument('--param', type=str)
-    parser.add_argument('--norm', type=bool)
+    parser.add_argument('--norm', type=int)
     parser.add_argument('--batchsize', type=int, default=128)
     parser.add_argument('--gpu', type=int, default=0)
     args = parser.parse_args()
@@ -109,7 +109,7 @@ if __name__ == '__main__':
         cuda.init()
     model_n = os.path.basename(args.model).split('.')[0]
     module = imp.load_source(model_n, args.model)
-    model = pickle.load(open(args.param, 'rb'))
+    model = pickle.load(open(args.param, 'rb'), encoding='latin1')
     if args.gpu >= 0:
         model.to_gpu()
     else:

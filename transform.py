@@ -10,7 +10,7 @@ from scipy.ndimage.interpolation import shift
 class Transform(object):
 
     def __init__(self, **params):
-        [setattr(self, key, value) for key, value in params.iteritems()]
+        [setattr(self, key, value) for key, value in params.items()]
 
     def transform(self, img):
         self._img = img

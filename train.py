@@ -14,7 +14,7 @@ import numpy as np
 from chainer import optimizers, cuda
 from dataset import load_dataset
 from transform import Transform
-import cPickle as pickle
+import pickle
 from draw_loss import draw_loss_curve
 from progressbar import ProgressBar
 from multiprocessing import Process, Queue
@@ -166,7 +166,8 @@ def validate(test_data, test_labels, N_test, model, args):
         loss, acc, pred = model.forward(x_batch, y_batch, train=False)
         sum_loss += float(cuda.to_cpu(loss.data)) * args.batchsize
         sum_accuracy += float(cuda.to_cpu(acc.data)) * args.batchsize
-        pbar.update(i + batchsize if (i + batchsize) < N_test else N_test)
+        pbar.update(i + args.batchsize
+                    if (i + args.batchsize) < N_test else N_test)
 
     return sum_loss, sum_accuracy
 
@@ -175,7 +176,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str,
                         default='models/VGG_mini_ABN.py')
-    parser.add_argument('--gpu', type=int, default=7)
+    parser.add_argument('--gpu', type=int, default=0)
     parser.add_argument('--epoch', type=int, default=100)
     parser.add_argument('--batchsize', type=int, default=128)
     parser.add_argument('--prefix', type=str,

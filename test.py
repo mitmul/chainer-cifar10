@@ -8,7 +8,7 @@ from chainer import cuda
 import chainer.functions as F
 from dataset import load_dataset
 from transform import Transform
-import pickle
+import cPickle as pickle
 import numpy as np
 import argparse
 from train import norm
@@ -86,7 +86,8 @@ def validate(test_data, test_labels, N_test, model, args):
 
         sum_loss += float(cuda.to_cpu(loss.data)) * args.batchsize
         sum_accuracy += float(cuda.to_cpu(acc.data)) * args.batchsize
-        pbar.update(i + batchsize if (i + batchsize) < N_test else N_test)
+        pbar.update(i + args.batchsize
+                    if (i + args.batchsize) < N_test else N_test)
 
     print('correct num:{}\t# of test images:{}'.format(sum_correct, N_test))
     print('correct rate:{}'.format(float(sum_correct) / float(N_test)))
@@ -109,7 +110,7 @@ if __name__ == '__main__':
         cuda.init()
     model_n = os.path.basename(args.model).split('.')[0]
     module = imp.load_source(model_n, args.model)
-    model = pickle.load(open(args.param, 'rb'), encoding='latin1')
+    model = pickle.load(open(args.param, 'rb'))
     if args.gpu >= 0:
         model.to_gpu()
     else:

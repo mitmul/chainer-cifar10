@@ -19,15 +19,14 @@ class Transform(object):
         if hasattr(self, 'shift'):
             self.translate()
         if hasattr(self, 'size'):
-            if isinstance(self.size, tuple):
-                self.scale()
-            else:
-                print('"size" attribute should be a tuple')
+            if not isinstance(self.size, tuple):
+                self.size = (self.size, self.size)
+            self.scale()
         if hasattr(self, 'norm'):
             if self.norm:
                 if not self._img.dtype == np.float32:
                     self._img = self._img.astype(np.float32)
-                # local contrast normalization
+                # global contrast normalization
                 for ch in range(self._img.shape[2]):
                     im = self._img[:, :, ch]
                     im = (im - np.mean(im)) / \

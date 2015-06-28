@@ -16,7 +16,7 @@ from progressbar import ProgressBar
 
 
 def aug_eval(test_data, test_labels, N_test, model, gpu=0):
-    trans = Transform(norm=True)
+    trans = Transform(flip=True, norm=True)
     # evaluation
     n_dup = 1
     sum_correct = 0

@@ -192,11 +192,14 @@ if __name__ == '__main__':
     parser.add_argument('--opt', type=str, default='Adam',
                         choices=['MomentumSGD', 'Adam', 'AdaGrad'])
     parser.add_argument('--weight_decay', type=float, default=0.0005)
-    parser.add_argument('--alpha', type=float, default=0.0001)
+    parser.add_argument('--alpha', type=float, default=0.001)
     parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--lr_decay_freq', type=int, default=100)
     parser.add_argument('--lr_decay_ratio', type=float, default=0.1)
+    parser.add_argument('--seed', type=int, default=1701)
     args = parser.parse_args()
+    np.random.seed(args.seed)
+
 
     # create result dir
     log_fn, result_dir = create_result_dir(args)
@@ -214,7 +217,7 @@ if __name__ == '__main__':
     logging.info('flip:{}\tnorm:{}'.format(_flip, _norm))
     trans = Transform(flip=_flip,
                       shift=args.shift,
-                      size=(args.size, args.size),
+                      size=args.size,
                       norm=_norm)
     logging.info('start training...')
 

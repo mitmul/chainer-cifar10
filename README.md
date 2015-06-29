@@ -44,7 +44,7 @@ You can choose model file to be trained from models dir. Cifar10, Network In Net
     - PReLU: Parameterized ReLU for all activation functions
 
 - VGG_mini_PReLU didn't perform well
-- Default setting (`$ python train.py`) is VGG_mini_ABN, and it performed the below result (91.09% accuracy at epoch 100):
+- Default setting (`$ python train.py`) is VGG_mini_ABN, and it performed the below result (92.28% accuracy at epoch 150):
 
 ![loss curve](loss.jpg)
 

@@ -187,7 +187,7 @@ if __name__ == '__main__':
     parser.add_argument('--datadir', type=str, default='data')
     parser.add_argument('--flip', type=int, default=1)
     parser.add_argument('--shift', type=int, default=10)
-    parser.add_argument('--size', type=int, default=32)
+    parser.add_argument('--size', type=int, default=28)
     parser.add_argument('--norm', type=int, default=0)
     parser.add_argument('--opt', type=str, default='Adam',
                         choices=['MomentumSGD', 'Adam', 'AdaGrad'])

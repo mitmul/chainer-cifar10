@@ -10,7 +10,7 @@ import argparse
 
 def unpickle(file):
     fo = open(file, 'rb')
-    dict = pickle.load(fo, encoding='latin1')
+    dict = pickle.load(fo)
     fo.close()
 
     return dict

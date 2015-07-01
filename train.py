@@ -28,12 +28,16 @@ def create_result_dir(args):
         if not os.path.exists(result_dir):
             os.makedirs(result_dir)
         log_fn = '%s/log.txt' % result_dir
-        logging.basicConfig(filename=log_fn, level=logging.DEBUG)
+        logging.basicConfig(
+            format='%(asctime)s [%(levelname)s] %(message)s',
+            filename=log_fn, level=logging.DEBUG)
         logging.info(args)
     else:
         result_dir = '.'
         log_fn = 'log.txt'
-        logging.basicConfig(filename=log_fn, level=logging.DEBUG)
+        logging.basicConfig(
+            format='%(asctime)s [%(levelname)s] %(message)s',
+            filename=log_fn, level=logging.DEBUG)
         logging.info(args)
 
     return log_fn, result_dir
@@ -199,7 +203,6 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, default=1701)
     args = parser.parse_args()
     np.random.seed(args.seed)
-
 
     # create result dir
     log_fn, result_dir = create_result_dir(args)

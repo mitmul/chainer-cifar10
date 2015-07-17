@@ -10,5 +10,7 @@ results
 *.pyc
 *.png
 *.txt
+*.log
+*.out
 
 !loss.png

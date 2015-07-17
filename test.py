@@ -16,7 +16,7 @@ from progressbar import ProgressBar
 
 
 def aug_eval(test_data, test_labels, N_test, model, gpu=0):
-    trans = Transform(norm=True)
+    trans = Transform(flip=True, norm=True)
     # evaluation
     n_dup = 1
     sum_correct = 0
@@ -70,7 +70,7 @@ def validate(test_data, test_labels, N_test, model, args):
         x_batch = test_data[i:i + args.batchsize]
         y_batch = test_labels[i:i + args.batchsize]
 
-        if args.norm:
+        if args.norm == 1:
             x_batch = np.asarray(map(norm, x_batch))
 
         if args.gpu >= 0:
@@ -86,7 +86,8 @@ def validate(test_data, test_labels, N_test, model, args):
 
         sum_loss += float(cuda.to_cpu(loss.data)) * args.batchsize
         sum_accuracy += float(cuda.to_cpu(acc.data)) * args.batchsize
-        pbar.update(i + batchsize if (i + batchsize) < N_test else N_test)
+        pbar.update(i + args.batchsize
+                    if (i + args.batchsize) < N_test else N_test)
 
     print('correct num:{}\t# of test images:{}'.format(sum_correct, N_test))
     print('correct rate:{}'.format(float(sum_correct) / float(N_test)))
@@ -100,7 +101,7 @@ if __name__ == '__main__':
                         choices=['normal', 'aug', 'single'])
     parser.add_argument('--model', type=str)
     parser.add_argument('--param', type=str)
-    parser.add_argument('--norm', type=bool)
+    parser.add_argument('--norm', type=int)
     parser.add_argument('--batchsize', type=int, default=128)
     parser.add_argument('--gpu', type=int, default=0)
     args = parser.parse_args()

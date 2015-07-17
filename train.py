@@ -14,7 +14,7 @@ import numpy as np
 from chainer import optimizers, cuda
 from dataset import load_dataset
 from transform import Transform
-import cPickle as pickle
+import pickle
 from draw_loss import draw_loss_curve
 from progressbar import ProgressBar
 from multiprocessing import Process, Queue
@@ -28,12 +28,16 @@ def create_result_dir(args):
         if not os.path.exists(result_dir):
             os.makedirs(result_dir)
         log_fn = '%s/log.txt' % result_dir
-        logging.basicConfig(filename=log_fn, level=logging.DEBUG)
+        logging.basicConfig(
+            format='%(asctime)s [%(levelname)s] %(message)s',
+            filename=log_fn, level=logging.DEBUG)
         logging.info(args)
     else:
         result_dir = '.'
         log_fn = 'log.txt'
-        logging.basicConfig(filename=log_fn, level=logging.DEBUG)
+        logging.basicConfig(
+            format='%(asctime)s [%(levelname)s] %(message)s',
+            filename=log_fn, level=logging.DEBUG)
         logging.info(args)
 
     return log_fn, result_dir
@@ -156,7 +160,7 @@ def validate(test_data, test_labels, N_test, model, args):
         x_batch = test_data[i:i + args.batchsize]
         y_batch = test_labels[i:i + args.batchsize]
 
-        if args.norm:
+        if args.norm == 1:
             x_batch = np.asarray(map(norm, x_batch))
 
         if args.gpu >= 0:
@@ -166,7 +170,8 @@ def validate(test_data, test_labels, N_test, model, args):
         loss, acc, pred = model.forward(x_batch, y_batch, train=False)
         sum_loss += float(cuda.to_cpu(loss.data)) * args.batchsize
         sum_accuracy += float(cuda.to_cpu(acc.data)) * args.batchsize
-        pbar.update(i + batchsize if (i + batchsize) < N_test else N_test)
+        pbar.update(i + args.batchsize
+                    if (i + args.batchsize) < N_test else N_test)
 
     return sum_loss, sum_accuracy
 
@@ -175,7 +180,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str,
                         default='models/VGG_mini_ABN.py')
-    parser.add_argument('--gpu', type=int, default=7)
+    parser.add_argument('--gpu', type=int, default=0)
     parser.add_argument('--epoch', type=int, default=100)
     parser.add_argument('--batchsize', type=int, default=128)
     parser.add_argument('--prefix', type=str,
@@ -186,16 +191,18 @@ if __name__ == '__main__':
     parser.add_argument('--datadir', type=str, default='data')
     parser.add_argument('--flip', type=int, default=1)
     parser.add_argument('--shift', type=int, default=10)
-    parser.add_argument('--size', type=int, default=32)
-    parser.add_argument('--norm', type=int, default=False)
+    parser.add_argument('--size', type=int, default=28)
+    parser.add_argument('--norm', type=int, default=0)
     parser.add_argument('--opt', type=str, default='Adam',
                         choices=['MomentumSGD', 'Adam', 'AdaGrad'])
     parser.add_argument('--weight_decay', type=float, default=0.0005)
-    parser.add_argument('--alpha', type=float, default=0.0001)
+    parser.add_argument('--alpha', type=float, default=0.001)
     parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--lr_decay_freq', type=int, default=100)
     parser.add_argument('--lr_decay_ratio', type=float, default=0.1)
+    parser.add_argument('--seed', type=int, default=1701)
     args = parser.parse_args()
+    np.random.seed(args.seed)
 
     # create result dir
     log_fn, result_dir = create_result_dir(args)
@@ -213,7 +220,7 @@ if __name__ == '__main__':
     logging.info('flip:{}\tnorm:{}'.format(_flip, _norm))
     trans = Transform(flip=_flip,
                       shift=args.shift,
-                      size=(args.size, args.size),
+                      size=args.size,
                       norm=_norm)
     logging.info('start training...')
 

@@ -4,13 +4,13 @@
 import os
 import numpy as np
 import glob
-import cPickle
+import pickle
 import argparse
 
 
 def unpickle(file):
     fo = open(file, 'rb')
-    dict = cPickle.load(fo)
+    dict = pickle.load(fo)
     fo.close()
 
     return dict

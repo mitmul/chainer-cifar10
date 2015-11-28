@@ -75,6 +75,8 @@ def get_model_optimizer(args):
 
 def augmentation(args, aug_queue, data, label, train):
     trans = Transform(args)
+    args.flip, args.shift, args.crop = 0, 0, 0
+    trans_test = Transform(args)
     perm = np.random.permutation(data.shape[0])
     for i in range(0, data.shape[0], args.batchsize):
         chosen_ids = perm[i:i + args.batchsize]
@@ -87,12 +89,9 @@ def augmentation(args, aug_queue, data, label, train):
         if train:
             for j, k in enumerate(chosen_ids):
                 aug[j] = trans(data[k])
-        elif args.norm == 1:
-            for j, k in enumerate(chosen_ids):
-                aug[j] = data[k] - data[k].reshape(-1, 3).mean(axis=0)
-                aug[j] /= aug[j].reshape(-1, 3).std(axis=0) + 1e-5
         else:
-            aug = data[chosen_ids]
+            for j, k in enumerate(chosen_ids):
+                aug[j] = trans_test(data[k])
 
         x = np.asarray(aug, dtype=np.float32).transpose((0, 3, 1, 2))
         t = np.asarray(label[chosen_ids], dtype=np.int32)
@@ -163,9 +162,9 @@ if __name__ == '__main__':
 
     # augmentation
     parser.add_argument('--flip', type=int, default=1)
-    parser.add_argument('--shift', type=int, default=0)
-    parser.add_argument('--crop', type=int, default=0)
-    parser.add_argument('--norm', type=int, default=0)
+    parser.add_argument('--shift', type=int, default=5)
+    parser.add_argument('--crop', type=int, default=28)
+    parser.add_argument('--norm', type=int, default=1)
 
     # optimization
     parser.add_argument('--opt', type=str, default='Adam',

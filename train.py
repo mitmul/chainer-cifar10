@@ -1,24 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function
-
-import sys
-sys.path.append('../../')
-
 import argparse
 import logging
 import time
 import os
 import imp
 import shutil
-import pickle
 import chainer
 import numpy as np
-from chainer import optimizers, cuda, Variable
+from chainer import optimizers, cuda, serializers, Variable
 from dataset import load_dataset
 from transform import Transform
-from draw_loss import draw_loss_curve
 from multiprocessing import Process, Queue
 
 
@@ -78,17 +71,30 @@ def get_model_optimizer(args):
         return model
 
 
-def augmentation(args, aug_queue, data, label):
-    print(data.shape, label.shape)
+def augmentation(args, aug_queue, data, label, train):
     trans = Transform(args)
     perm = np.random.permutation(data.shape[0])
     for i in range(0, data.shape[0], args.batchsize):
-        aug = np.empty((args.batchsize, args.crop, args.crop, 3),
-                       dtype=np.float32)
-        for j, k in enumerate(perm[i:i + args.batchsize]):
-            aug[j] = trans(data[k])
+        chosen_ids = perm[i:i + args.batchsize]
+        if args.crop > 0:
+            aug = np.empty((len(chosen_ids), args.crop, args.crop, 3),
+                           dtype=np.float32)
+        else:
+            aug = np.empty((len(chosen_ids), 32, 32, 3), dtype=np.float32)
+
+        if train:
+            for j, k in enumerate(chosen_ids):
+                aug[j] = trans(data[k])
+        elif args.norm == 1:
+            for j, k in enumerate(chosen_ids):
+                aug[j] = data[k] - data[k].reshape(-1, 3).mean(axis=0)
+                aug[j] /= aug[j].reshape(-1, 3).std(axis=0) + 1e-5
+        else:
+            aug = data[chosen_ids]
+
         x = np.asarray(aug, dtype=np.float32).transpose((0, 3, 1, 2))
-        t = np.asarray(label[perm[i:i + args.batchsize]], dtype=np.int32)
+        t = np.asarray(label[chosen_ids], dtype=np.int32)
+
         aug_queue.put((x, t))
 
 
@@ -99,11 +105,12 @@ def one_epoch(args, model, optimizer, data, label, epoch, train):
     # for parallel augmentation
     aug_queue = Queue()
     aug_worker = Process(target=augmentation,
-                         args=(args, aug_queue, data, label))
+                         args=(args, aug_queue, data, label, train))
     aug_worker.start()
 
     sum_accuracy = 0
     sum_loss = 0
+    num = 0
     for i in range(0, data.shape[0], args.batchsize):
         x, t = aug_queue.get()
         volatile = 'off' if train else 'on'
@@ -117,8 +124,17 @@ def one_epoch(args, model, optimizer, data, label, epoch, train):
 
         sum_loss += float(model.loss.data) * t.data.shape[0]
         sum_accuracy += float(model.accuracy.data) * t.data.shape[0]
+        num += t.data.shape[0]
+
+        print('{}/{}'.format(i, data.shape[0]))
 
         del x, t
+
+    if train and (epoch == 1 or epoch % args.snapshot == 0):
+        model_fn = '{}/model_epoch-{}.model'.format(args.result_dir, epoch)
+        opt_fn = '{}/optimizer_epoch-{}.state'.format(args.result_dir, epoch)
+        serializers.save_hdf5(model_fn, model)
+        serializers.save_hdf5(opt_fn, optimizer)
 
     if train:
         logging.info('epoch:{}\ttrain loss:{}\ttrain accuracy:{}'.format(
@@ -131,18 +147,18 @@ def one_epoch(args, model, optimizer, data, label, epoch, train):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, default='models/NIN.py')
+    parser.add_argument('--model', type=str, default='models/VGG.py')
     parser.add_argument('--gpu', type=int, default=0)
     parser.add_argument('--epoch', type=int, default=100)
     parser.add_argument('--batchsize', type=int, default=128)
-    parser.add_argument('--prefix', type=str, default='NIN')
+    parser.add_argument('--prefix', type=str, default='VGG')
     parser.add_argument('--snapshot', type=int, default=10)
     parser.add_argument('--datadir', type=str, default='data')
 
     # augmentation
-    parser.add_argument('--flip', type=int, default=1)
-    parser.add_argument('--shift', type=int, default=10)
-    parser.add_argument('--crop', type=int, default=28)
+    parser.add_argument('--flip', type=int, default=0)
+    parser.add_argument('--shift', type=int, default=0)
+    parser.add_argument('--crop', type=int, default=0)
     parser.add_argument('--norm', type=int, default=0)
 
     # optimization
@@ -169,7 +185,7 @@ if __name__ == '__main__':
     # learning loop
     for epoch in range(1, args.epoch + 1):
         if args.opt == 'MomentumSGD':
-            logging.info('learning rate:', optimizer.lr)
+            logging.info('learning rate:{}'.format(optimizer.lr))
             if epoch % args.lr_decay_freq == 0:
                 optimizer.lr *= args.lr_decay_ratio
 

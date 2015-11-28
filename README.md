@@ -1,10 +1,9 @@
-# CIFAR-10 with Chainer
-
+# chainer-cifar10
 ## Requirement
-
 - [Chainer v1.5](http://chainer.org)
-- progressbar2
-    - `$ pip install progressbar2`
+- scikit-image 0.11.3
+- scipy 0.16.0
+- numpy 1.10. 1
 
 ## Download Cifar10 Dataset
 
@@ -38,8 +37,3 @@ $ python test.py --eval normal \
 ```
 $ python draw_loss.py --logfile log.txt --outfile log.jpg
 ```
-
-### TIPS:
-
-- The label vector will be passed to softmax_cross_entropy should be in shape (N,). (N, 1) causes divergence of weights.
-- If `model.to_cpu()` and `model.to_gpu()` are called during training, test scores are fixed and never updated.

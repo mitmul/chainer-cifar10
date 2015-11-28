@@ -40,11 +40,12 @@ class Transform(object):
             size = (self.args.crop, self.args.crop)
             self.img = imresize(self.img, size, 'nearest')
 
+        if not self.img.dtype == np.float32:
+            self.img = self.img.astype(np.float32)
+
         if self.args.norm == 1:
-            if not self.img.dtype == np.float32:
-                self.img = self.img.astype(np.float32)
-            self.img -= self.img.reshape(-1, 2).mean(axis=0)
-            self.img /= self.img.reshape(-1, 2).std(axis=0) + 1e-5
+            self.img -= self.img.reshape(-1, 3).mean(axis=0)
+            self.img /= self.img.reshape(-1, 3).std(axis=0) + 1e-5
 
         return self.img
 

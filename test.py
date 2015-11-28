@@ -4,13 +4,13 @@
 import os
 import sys
 import imp
-from chainer import cuda
+import argparse
+import numpy as np
 import chainer.functions as F
+from six.moves import cPickle as pickle
+from chainer import cuda
 from dataset import load_dataset
 from transform import Transform
-import cPickle as pickle
-import numpy as np
-import argparse
 from train import norm
 from progressbar import ProgressBar
 

@@ -59,8 +59,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     trans = Transform(args)
 
-    data = np.load('data/test_data.npy')
-    labels = np.load('data/test_labels.npy')
+    data = np.load('data/train_data.npy')
+    labels = np.load('data/train_labels.npy')
     perm = np.random.permutation(data.shape[0])
     if not os.path.exists('data/test_trans'):
         os.mkdir('data/test_trans')

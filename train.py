@@ -10,10 +10,11 @@ import shutil
 import chainer
 import draw_loss
 import numpy as np
-from chainer import optimizers, cuda, serializers, Variable
+from skimage.io import imsave
 from dataset import load_dataset
 from transform import Transform
 from multiprocessing import Process, Queue
+from chainer import optimizers, cuda, serializers, Variable
 
 
 def create_result_dir(args):
@@ -155,7 +156,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default='models/VGG.py')
     parser.add_argument('--gpu', type=int, default=0)
-    parser.add_argument('--epoch', type=int, default=100)
+    parser.add_argument('--epoch', type=int, default=10000)
     parser.add_argument('--batchsize', type=int, default=128)
     parser.add_argument('--snapshot', type=int, default=10)
     parser.add_argument('--datadir', type=str, default='data')
@@ -164,7 +165,7 @@ if __name__ == '__main__':
     parser.add_argument('--flip', type=int, default=1)
     parser.add_argument('--shift', type=int, default=0)
     parser.add_argument('--crop', type=int, default=0)
-    parser.add_argument('--norm', type=int, default=1)
+    parser.add_argument('--norm', type=int, default=0)
 
     # optimization
     parser.add_argument('--opt', type=str, default='Adam',

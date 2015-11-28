@@ -80,7 +80,7 @@ class VGG(chainer.Chain):
         h = F.max_pooling_2d(h, 2, 2)
 
         h = F.dropout(h, ratio=0.5, train=self.train)
-        h = F.relu(self.bn6(self.fc6(h)))
+        h = F.relu(self.bn6(self.fc6(h), test=not self.train))
         h = F.dropout(h, ratio=0.5, train=self.train)
         h = self.fc7(h)
 

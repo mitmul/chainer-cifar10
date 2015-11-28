@@ -6,11 +6,10 @@ results
 .ftpconfig
 .remote-sync.json*
 
+*__pycache__*
 *.npy
 *.pyc
 *.png
 *.txt
 *.log
 *.out
-
-!loss.png

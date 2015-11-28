@@ -51,6 +51,7 @@ class Transform(object):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--batchsize', type=int, default=128)
     parser.add_argument('--flip', type=int, default=1)
     parser.add_argument('--shift', type=int, default=10)
     parser.add_argument('--crop', type=int, default=28)
@@ -58,10 +59,20 @@ if __name__ == '__main__':
     args = parser.parse_args()
     trans = Transform(args)
 
-    train_data = np.load('data/train_data.npy')
+    data = np.load('data/test_data.npy')
+    labels = np.load('data/test_labels.npy')
+    perm = np.random.permutation(data.shape[0])
     if not os.path.exists('data/test_trans'):
         os.mkdir('data/test_trans')
-    for i in range(10):
-        img = train_data[i]
-        img = trans(img)
-        imsave('data/test_trans/{}.png'.format(i), img)
+    for i in range(0, data.shape[0], args.batchsize):
+        chosen_ids = perm[i:i + args.batchsize]
+        img = data[chosen_ids]
+        lbl = labels[chosen_ids]
+        aug = np.empty((len(chosen_ids), args.crop, args.crop, 3),
+                       dtype=np.float32)
+        for j, k in enumerate(chosen_ids):
+            aug[j] = trans(data[k])
+
+        for im, lb in zip(aug, lbl):
+            imsave('data/test_trans/{}-{}_{}_{}.png'.format(
+                lb, i, j, k), im.astype(np.uint8))

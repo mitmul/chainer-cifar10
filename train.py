@@ -8,6 +8,7 @@ import os
 import imp
 import shutil
 import chainer
+import draw_loss
 import numpy as np
 from chainer import optimizers, cuda, serializers, Variable
 from dataset import load_dataset
@@ -126,7 +127,9 @@ def one_epoch(args, model, optimizer, data, label, epoch, train):
         sum_accuracy += float(model.accuracy.data) * t.data.shape[0]
         num += t.data.shape[0]
 
-        print('{}/{}'.format(i, data.shape[0]))
+        logging.info('iter:{}\t{:05d}/{:05d}\t{}'.format(
+            (epoch - 1) + i / data.shape[0], i, data.shape[0],
+            sum_accuracy / num))
 
         del x, t
 
@@ -143,6 +146,9 @@ def one_epoch(args, model, optimizer, data, label, epoch, train):
         logging.info('epoch:{}\ttest loss:{}\ttest accuracy:{}'.format(
             epoch, sum_loss / data.shape[0], sum_accuracy / data.shape[0]))
 
+    draw_loss.draw_loss_curve('{}/log.txt'.format(args.result_dir),
+                              '{}/log.png'.format(args.result_dir), epoch)
+
     aug_worker.join()
 
 if __name__ == '__main__':
@@ -151,15 +157,14 @@ if __name__ == '__main__':
     parser.add_argument('--gpu', type=int, default=0)
     parser.add_argument('--epoch', type=int, default=100)
     parser.add_argument('--batchsize', type=int, default=128)
-    parser.add_argument('--prefix', type=str, default='VGG')
     parser.add_argument('--snapshot', type=int, default=10)
     parser.add_argument('--datadir', type=str, default='data')
 
     # augmentation
-    parser.add_argument('--flip', type=int, default=0)
+    parser.add_argument('--flip', type=int, default=1)
     parser.add_argument('--shift', type=int, default=0)
     parser.add_argument('--crop', type=int, default=0)
-    parser.add_argument('--norm', type=int, default=0)
+    parser.add_argument('--norm', type=int, default=1)
 
     # optimization
     parser.add_argument('--opt', type=str, default='Adam',

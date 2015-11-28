@@ -76,7 +76,7 @@ def get_model_optimizer(result_dir, args):
         optimizer = optimizers.AdaGrad(lr=args.lr)
     else:
         raise Exception('No optimizer is selected')
-    optimizer.setup(model.collect_parameters())
+    optimizer.setup(model)
 
     return model, optimizer
 
@@ -103,7 +103,11 @@ def train(train_data, train_labels, N, model, optimizer, trans, args):
     aug_worker.start()
 
     # training
-    pbar = ProgressBar(N)
+    pbar = None
+    try:
+        pbar = ProgressBar(max_value=N)
+    except:
+        pbar = ProgressBar(N)
     perm = np.random.permutation(N)
     sum_accuracy = 0
     sum_loss = 0
@@ -128,9 +132,9 @@ def train(train_data, train_labels, N, model, optimizer, trans, args):
             optimizer.weight_decay(decay=args.decay)
         optimizer.update()
 
-        sum_loss += float(cuda.to_cpu(loss.data)) * args.batchsize
-        sum_accuracy += float(cuda.to_cpu(acc.data)) * args.batchsize
-        pbar.update(i + args.batchsize if (i + args.batchsize) < N else N)
+        sum_loss += float(loss.data) * y_batch.shape[0]
+        sum_accuracy += float(acc.data) * y_batch.shape[0]
+        pbar.update(i + y_batch.shape[0] if (i + y_batch.shape[0]) < N else N)
 
     x_batch_queue.put(None)
     aug_worker.join()
@@ -245,7 +249,8 @@ if __name__ == '__main__':
         sum_loss, sum_accuracy = validate(test_data, test_labels, N_test,
                                           model, args)
         msg = 'epoch:{:02d}\ttest mean loss={}, accuracy={}'.format(
-            epoch + args.epoch_offset, sum_loss / N_test, sum_accuracy / N_test)
+            epoch + args.epoch_offset, sum_loss / N_test,
+            sum_accuracy / N_test)
         logging.info(msg)
         print('\n%s' % msg)
 

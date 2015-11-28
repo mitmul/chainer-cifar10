@@ -1,70 +1,44 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from chainer import Variable, FunctionSet
+import math
+
+import chainer
 import chainer.functions as F
+import chainer.links as L
 
 
-class NIN(FunctionSet):
+class NIN(chainer.Chain):
 
-    """
-    Network In Network
-    """
+    """Network-in-Network example model."""
 
     def __init__(self):
+        w = math.sqrt(2)  # MSRA scaling
         super(NIN, self).__init__(
-            conv1=F.Convolution2D(3, 192, 5, stride=1, pad=2),
-            bn1=F.BatchNormalization(192, decay=0.9, eps=1e-5),
-            prelu1=F.PReLU(),
-
-            conv2=F.Convolution2D(192, 160, 1, stride=1, pad=0),
-            bn2=F.BatchNormalization(160, decay=0.9, eps=1e-5),
-            prelu2=F.PReLU(),
-
-            conv3=F.Convolution2D(160, 96, 1, stride=1, pad=0),
-            bn3=F.BatchNormalization(96, decay=0.9, eps=1e-5),
-            prelu3=F.PReLU(),
-
-            conv4=F.Convolution2D(96, 192, 5, stride=1, pad=2),
-            bn4=F.BatchNormalization(192, decay=0.9, eps=1e-5),
-            prelu4=F.PReLU(),
-
-            conv5=F.Convolution2D(192, 192, 1, stride=1, pad=0),
-            bn5=F.BatchNormalization(192, decay=0.9, eps=1e-5),
-            prelu5=F.PReLU(),
-
-            conv6=F.Convolution2D(192, 192, 1, stride=1, pad=0),
-            bn6=F.BatchNormalization(192, decay=0.9, eps=1e-5),
-            prelu6=F.PReLU(),
-
-            conv7=F.Convolution2D(192, 192, 1, stride=1, pad=0),
-            bn7=F.BatchNormalization(192, decay=0.9, eps=1e-5),
-            prelu7=F.PReLU(),
-
-            conv8=F.Convolution2D(192, 10, 1, stride=1, pad=0),
-            prelu8=F.PReLU(),
+            mlpconv1=L.MLPConvolution2D(
+                3, (96, 96, 96), 3, stride=1, pad=1, wscale=w),
+            mlpconv2=L.MLPConvolution2D(
+                96, (256, 256, 256), 3, pad=1, wscale=w),
+            mlpconv3=L.MLPConvolution2D(
+                256, (384, 384, 384), 3, pad=1, wscale=w),
+            mlpconv4=L.MLPConvolution2D(
+                384, (1024, 1024, 10), 3, pad=1, wscale=w),
         )
+        self.train = True
 
-    def forward(self, x_data, y_data, train=True):
-        x, t = Variable(x_data), Variable(y_data)
+    def __call__(self, x, t):
+        h = F.max_pooling_2d(F.relu(self.mlpconv1(x)), 2, stride=2)
+        print(h.data.shape)
+        h = F.max_pooling_2d(F.relu(self.mlpconv2(h)), 2, stride=2)
+        print(h.data.shape)
+        h = F.max_pooling_2d(F.relu(self.mlpconv3(h)), 2, stride=2)
+        print(h.data.shape)
+        h = self.mlpconv4(F.dropout(h, train=self.train))
+        h = F.reshape(F.average_pooling_2d(h, 6), (x.data.shape[0], 10))
 
-        h = self.prelu1(self.bn1(self.conv1(x)))
-        h = self.prelu2(self.bn2(self.conv2(h)))
-        h = self.prelu3(self.bn3(self.conv3(h)))
-        h = F.max_pooling_2d(h, 3, stride=2)
-        h = F.dropout(h, ratio=0.5, train=train)
+        self.loss = F.softmax_cross_entropy(h, t)
+        self.accuracy = F.accuracy(h, t)
 
-        h = self.prelu4(self.bn4(self.conv4(h)))
-        h = self.prelu5(self.bn5(self.conv5(h)))
-        h = self.prelu6(self.bn6(self.conv6(h)))
-        h = F.average_pooling_2d(h, 3, stride=2)
-        h = F.dropout(h, ratio=0.5, train=train)
+        return self.loss
 
-        h = self.prelu7(self.bn7(self.conv7(h)))
-        h = self.prelu8(self.conv8(h))
-        h = F.average_pooling_2d(h, 7, stride=1)
-
-        if train:
-            return F.softmax_cross_entropy(h, t), F.accuracy(h, t)
-        else:
-            return F.softmax_cross_entropy(h, t), F.accuracy(h, t), h
+model = NIN()

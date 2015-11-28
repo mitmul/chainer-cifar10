@@ -1,73 +1,66 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import cv2 as cv
+import os
+import argparse
 import numpy as np
+from skimage.io import imsave
 from scipy.misc import imresize
 from scipy.ndimage.interpolation import shift
 
 
 class Transform(object):
 
-    def __init__(self, **params):
-        [setattr(self, key, value) for key, value in params.items()]
+    def __init__(self, args):
+        self.args = args
 
-    def transform(self, img):
-        self._img = img
-        if hasattr(self, 'flip'):
-            self.fliplr()
-        if hasattr(self, 'shift'):
-            self.translate()
-        if hasattr(self, 'size'):
-            if not isinstance(self.size, tuple):
-                self.size = (self.size, self.size)
-            self.scale()
-        if hasattr(self, 'norm'):
-            if self.norm:
-                if not self._img.dtype == np.float32:
-                    self._img = self._img.astype(np.float32)
-                # global contrast normalization
-                for ch in range(self._img.shape[2]):
-                    im = self._img[:, :, ch]
-                    im = (im - np.mean(im)) / \
-                        (np.std(im) + np.finfo(np.float32).eps)
-                    self._img[:, :, ch] = im
+    def __call__(self, img):
+        self.img = img
 
-        if not self._img.dtype == np.float32:
-            self._img = self._img.astype(np.float32)
+        if self.args.flip == 1:
+            if np.random.randint(2) == 0:
+                self.img = np.fliplr(self.img)
 
-        return self._img
+        if self.args.shift > 0:
+            dx = int(np.random.rand() * self.args.shift * 2 - self.args.shift)
+            dy = int(np.random.rand() * self.args.shift * 2 - self.args.shift)
+            self.img = shift(self.img, (dy, dx, 0))
 
-    def fliplr(self):
-        if np.random.randint(2) == 1 and self.flip == True:
-            self._img = np.fliplr(self._img)
+            if dx < 0:
+                self.img = self.img[:, :dx, :]
+            if dx >= 0:
+                self.img = self.img[:, dx:, :]
 
-    def translate(self):
-        dx = int(np.random.rand() * self.shift * 2 - self.shift)
-        dy = int(np.random.rand() * self.shift * 2 - self.shift)
-        self._img = shift(self._img, (dy, dx, 0))
+            if dy < 0:
+                self.img = self.img[:dy, :, :]
+            if dy >= 0:
+                self.img = self.img[dy:, :, :]
 
-        if dx < 0:
-            self._img = self._img[:, :dx, :]
-        if dx >= 0:
-            self._img = self._img[:, dx:, :]
+        if self.args.crop > 0:
+            size = (self.args.crop, self.args.crop)
+            self.img = imresize(self.img, size, 'nearest')
 
-        if dy < 0:
-            self._img = self._img[:dy, :, :]
-        if dy >= 0:
-            self._img = self._img[dy:, :, :]
+        if self.args.norm == 1:
+            if not self.img.dtype == np.float32:
+                self.img = self.img.astype(np.float32)
+            self.img -= self.img.reshape(-1, 2).mean(axis=0)
+            self.img /= self.img.reshape(-1, 2).std(axis=0) + 1e-5
 
-    def scale(self):
-        self._img = imresize(self._img, self.size, 'nearest')
-
+        return self.img
 
 if __name__ == '__main__':
-    train_data = np.load('data/train_data.npy')
-    trans = Transform(angle=5, flip=True, shift=5, size=(32, 32))
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--flip', type=int, default=1)
+    parser.add_argument('--shift', type=int, default=10)
+    parser.add_argument('--crop', type=int, default=28)
+    parser.add_argument('--norm', type=int, default=0)
+    args = parser.parse_args()
+    trans = Transform(args)
 
+    train_data = np.load('data/train_data.npy')
+    if not os.path.exists('data/test_trans'):
+        os.mkdir('data/test_trans')
     for i in range(10):
-        img = train_data[i].transpose((1, 2, 0)) * 255
-        img = img.astype(np.uint8)[:, :, ::-1]
-        img = trans.transform(img)
-        cv.imshow('test', img)
-        cv.waitKey(0)
+        img = train_data[i]
+        img = trans(img)
+        imsave('data/test_trans/{}.png'.format(i), img)

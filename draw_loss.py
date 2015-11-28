@@ -18,7 +18,7 @@ def draw_loss_curve(logfile, outfile):
     test_acc = []
     for line in open(logfile):
         line = line.strip()
-        if not 'epoch:' in line:
+        if 'epoch:' not in line:
             continue
         epoch = int(re.search('epoch:([0-9]+)', line).groups()[0])
         if 'train' in line:

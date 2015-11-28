@@ -2,18 +2,22 @@
 # -*- coding: utf-8 -*-
 
 import os
-import numpy as np
+import sys
 import glob
-import pickle
 import argparse
+import numpy as np
+from skimage.io import imsave
+from six.moves import cPickle as pickle
 
 
 def unpickle(file):
-    fo = open(file, 'rb')
-    dict = pickle.load(fo)
-    fo.close()
+    fp = open(file, 'rb')
+    if sys.version_info.major == 2:
+        data = pickle.load(fp)
+    elif sys.version_info.major == 3:
+        data = pickle.load(fp, encoding='latin-1')
 
-    return dict
+    return data
 
 
 def load_dataset(datadir='data'):
@@ -34,39 +38,31 @@ if __name__ == '__main__':
     if not os.path.exists(args.outdir):
         os.mkdir(args.outdir)
 
-    data = []
+    data = np.zeros((50000, 3, 32, 32), dtype=np.uint8)
     labels = []
-    for data_fn in sorted(glob.glob('cifar-10-batches-py/data_batch*')):
+    for i, data_fn in enumerate(
+            sorted(glob.glob('cifar-10-batches-py/data_batch*'))):
         batch = unpickle(data_fn)
-        data.append(batch['data'])
-        labels.append(batch['labels'])
+        data[i:i + 10000] = batch['data'].reshape((10000, 3, 32, 32))
+        labels.extend(batch['labels'])
+    data = data.transpose((0, 2, 3, 1))
+    labels = np.asarray(labels, dtype=np.int32)
 
-    data = np.asarray(data)
-    _data = data[0]
-    for d in data[1:]:
-        _data = np.vstack((_data, d))
-    data = _data
+    if not os.path.exists('data/test_data'):
+        os.mkdir('data/test_data')
+    for i in range(100):
+        imsave('data/test_data/{}.png'.format(i), data[i])
 
-    labels = np.asarray(labels)
-    labels = labels.reshape((labels.shape[0], labels.shape[1], 1))
-    _labels = labels[0]
-    for l in labels[1:]:
-        _labels = np.vstack((_labels, l))
-    labels = _labels.reshape((labels.shape[0] * labels.shape[1]))
-
-    num, dim = data.shape
-    train_data = data.reshape((num, 3, 32, 32)).astype(np.float32)
-    train_labels = labels.astype(np.int32)
-
-    np.save('%s/train_data' % args.outdir, train_data)
-    np.save('%s/train_labels' % args.outdir, train_labels)
+    np.save('%s/train_data' % args.outdir, data)
+    np.save('%s/train_labels' % args.outdir, labels)
 
     test = unpickle('cifar-10-batches-py/test_batch')
 
-    data = np.asarray(test['data'])
-    num, dim = data.shape
-    test_data = data.reshape((num, 3, 32, 32)).astype(np.float32)
-    test_labels = np.asarray(test['labels'], dtype=np.int32)
+    data = np.asarray(test['data'], dtype=np.uint8).reshape(
+        (10000, 3, 32, 32)).transpose((0, 2, 3, 1))
+    labels = np.asarray(test['labels'], dtype=np.int32)
+    for i in range(100, 200, 1):
+        imsave('data/test_data/{}.png'.format(i), data[i])
 
-    np.save('%s/test_data' % args.outdir, test_data)
-    np.save('%s/test_labels' % args.outdir, test_labels)
+    np.save('%s/test_data' % args.outdir, data)
+    np.save('%s/test_labels' % args.outdir, labels)

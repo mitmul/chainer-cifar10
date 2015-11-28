@@ -1,11 +1,8 @@
-# Cifar10Net with Chainer
+# CIFAR-10 with Chainer
 
 ## Requirement
 
-- [Chainer](http://chainer.org)
-    - `$ git clone https://github.com/pfnet/chainer.git`
-    - `$ cd chainer; python setup.py install`
-    - `$ pip install chainer-cuda-deps`
+- [Chainer v1.5](http://chainer.org)
 - progressbar2
     - `$ pip install progressbar2`
 
@@ -26,29 +23,6 @@ $ python dataset.py
 ```
 $ python train.py
 ```
-
-See the help messages with --help option for details.
-
-You can choose model file to be trained from models dir. Cifar10, Network In Network (NIN), and VGG-net (with some variants) are already prepared. The architecture of VGG_mini is derived from [here](https://github.com/nagadomi/kaggle-cifar10-torch7). The original paper of VGG-net is found in [here](http://arxiv.org/pdf/1409.1556.pdf).
-
-## Models
-
-- There are four types of base architectures
-    - Cifar10
-    - NIN (Network In Network)
-    - VGG (similar to original VGG-net)
-    - VGG_mini (same as [nagadomi](https://github.com/nagadomi/kaggle-cifar10-torch7)'s model)
-- Variants are different at Batch Normalization and Parameterized ReLU
-    - BN: Batch Normalization for first two blocks of convolutional layer
-    - ABN: Batch Normalization for all convolutional layers
-    - PReLU: Parameterized ReLU for all activation functions
-
-- VGG_mini_PReLU didn't perform well
-- Default setting (`$ python train.py`) is VGG_mini_ABN, and it performed the below result (92.28% accuracy at epoch 150):
-
-![loss curve](loss.jpg)
-
-I don't know why but `chainer.functions.accuracy` function returns a little better value. So I tested experimental results with `test.py`.
 
 ## Test
 

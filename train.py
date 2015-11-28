@@ -127,9 +127,8 @@ def one_epoch(args, model, optimizer, data, label, epoch, train):
         sum_accuracy += float(model.accuracy.data) * t.data.shape[0]
         num += t.data.shape[0]
 
-        logging.info('iter:{}\t{:05d}/{:05d}\t{}'.format(
-            (epoch - 1) + i / data.shape[0], i, data.shape[0],
-            sum_accuracy / num))
+        logging.info('{:05d}/{:05d}\t{}'.format(
+            i, data.shape[0], sum_accuracy / num))
 
         del x, t
 

@@ -7,14 +7,19 @@ import time
 import os
 import imp
 import shutil
+import six
 import chainer
 import draw_loss
 import numpy as np
-from skimage.io import imsave
 from dataset import load_dataset
 from transform import Transform
-from multiprocessing import Process, Queue
-from chainer import optimizers, cuda, serializers, Variable
+from multiprocessing import Process
+from multiprocessing import Queue
+from chainer import optimizers
+from chainer import cuda
+from chainer import serializers
+from chainer import Variable
+from chainer import computational_graph
 
 
 def create_result_dir(args):
@@ -75,28 +80,24 @@ def get_model_optimizer(args):
 
 def augmentation(args, aug_queue, data, label, train):
     trans = Transform(args)
-    args.flip, args.shift, args.crop = 0, 0, 0
-    trans_test = Transform(args)
     perm = np.random.permutation(data.shape[0])
-    for i in range(0, data.shape[0], args.batchsize):
-        chosen_ids = perm[i:i + args.batchsize]
-        if args.crop > 0:
-            aug = np.empty((len(chosen_ids), args.crop, args.crop, 3),
-                           dtype=np.float32)
-        else:
-            aug = np.empty((len(chosen_ids), 32, 32, 3), dtype=np.float32)
-
-        if train:
+    if train:
+        for i in six.moves.range(0, data.shape[0], args.batchsize):
+            chosen_ids = perm[i:i + args.batchsize]
+            aug = np.empty((len(chosen_ids), 24, 24, 3), dtype=np.float32)
             for j, k in enumerate(chosen_ids):
                 aug[j] = trans(data[k])
-        else:
-            for j, k in enumerate(chosen_ids):
-                aug[j] = trans_test(data[k])
 
-        x = np.asarray(aug, dtype=np.float32).transpose((0, 3, 1, 2))
-        t = np.asarray(label[chosen_ids], dtype=np.int32)
-
-        aug_queue.put((x, t))
+            x = np.asarray(aug, dtype=np.float32).transpose((0, 3, 1, 2))
+            t = np.asarray(label[chosen_ids], dtype=np.int32)
+            aug_queue.put((x, t))
+    else:
+        for i in six.moves.range(data.shape[0]):
+            aug = trans.testing(data[i])
+            x = np.asarray(aug, dtype=np.float32).transpose((0, 3, 1, 2))
+            t = np.asarray(np.repeat(label[i], len(aug)), dtype=np.int32)
+            aug_queue.put((x, t))
+    aug_queue.put(None)
 
 
 def one_epoch(args, model, optimizer, data, label, epoch, train):
@@ -112,29 +113,42 @@ def one_epoch(args, model, optimizer, data, label, epoch, train):
     sum_accuracy = 0
     sum_loss = 0
     num = 0
-    for i in range(0, data.shape[0], args.batchsize):
-        x, t = aug_queue.get()
+    while True:
+        datum = aug_queue.get()
+        if datum is None:
+            break
+        x, t = datum
+
         volatile = 'off' if train else 'on'
         x = Variable(xp.asarray(x), volatile=volatile)
         t = Variable(xp.asarray(t), volatile=volatile)
 
         if train:
             optimizer.update(model, x, t)
+            if epoch == 1 and num == 0:
+                with open('{}/graph.dot'.format(args.result_dir), 'w') as o:
+                    g = computational_graph.build_computational_graph(
+                        (model.loss, ), remove_split=True)
+                    o.write(g.dump())
+            sum_loss += float(model.loss.data) * t.data.shape[0]
+            sum_accuracy += float(model.accuracy.data) * t.data.shape[0]
+            num += t.data.shape[0]
+            logging.info('{:05d}/{:05d}\tloss:{:.3f}\tacc:{:.3f}'.format(
+                num, data.shape[0], sum_loss / num, sum_accuracy / num))
         else:
-            model(x, t)
-
-        sum_loss += float(model.loss.data) * t.data.shape[0]
-        sum_accuracy += float(model.accuracy.data) * t.data.shape[0]
-        num += t.data.shape[0]
-
-        logging.info('{:05d}/{:05d}\t{}'.format(
-            i, data.shape[0], sum_accuracy / num))
+            pred = model(x, t).data
+            pred = pred.mean(axis=0)
+            acc = int(pred.argmax() == t.data[0])
+            sum_accuracy += acc
+            num += 1
+            logging.info('{:05d}/{:05d}\tacc:{:.3f}'.format(
+                num, data.shape[0], sum_accuracy / num))
 
         del x, t
 
     if train and (epoch == 1 or epoch % args.snapshot == 0):
-        model_fn = '{}/model_epoch-{}.model'.format(args.result_dir, epoch)
-        opt_fn = '{}/optimizer_epoch-{}.state'.format(args.result_dir, epoch)
+        model_fn = '{}/epoch-{}.model'.format(args.result_dir, epoch)
+        opt_fn = '{}/epoch-{}.state'.format(args.result_dir, epoch)
         serializers.save_hdf5(model_fn, model)
         serializers.save_hdf5(opt_fn, optimizer)
 
@@ -160,18 +174,19 @@ if __name__ == '__main__':
     parser.add_argument('--datadir', type=str, default='data')
 
     # augmentation
+    parser.add_argument('--cropping', type=int, default=1)
+    parser.add_argument('--scaling', type=int, default=1)
     parser.add_argument('--flip', type=int, default=1)
-    parser.add_argument('--shift', type=int, default=5)
-    parser.add_argument('--crop', type=int, default=28)
     parser.add_argument('--norm', type=int, default=1)
+    parser.add_argument('--side', type=int, default=24)
 
     # optimization
     parser.add_argument('--opt', type=str, default='Adam',
                         choices=['MomentumSGD', 'Adam', 'AdaGrad'])
-    parser.add_argument('--weight_decay', type=float, default=0.0005)
+    parser.add_argument('--weight_decay', type=float, default=0.0001)
     parser.add_argument('--alpha', type=float, default=0.001)
-    parser.add_argument('--lr', type=float, default=0.01)
-    parser.add_argument('--lr_decay_freq', type=int, default=100)
+    parser.add_argument('--lr', type=float, default=0.1)
+    parser.add_argument('--lr_decay_freq', type=int, default=256)
     parser.add_argument('--lr_decay_ratio', type=float, default=0.1)
     parser.add_argument('--seed', type=int, default=1701)
 

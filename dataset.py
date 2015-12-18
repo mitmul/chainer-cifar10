@@ -9,6 +9,7 @@ import numpy as np
 from skimage.io import imsave
 from six.moves import cPickle as pickle
 from scipy import linalg
+from transform import Transform
 
 
 def unpickle(file):
@@ -46,8 +47,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--outdir', type=str, default='data')
     parser.add_argument('--whitening', type=int, default=1)
+    parser.add_argument('--norm', type=int, default=1)
     args = parser.parse_args()
     print(args)
+
+    trans = Transform(args)
 
     if not os.path.exists(args.outdir):
         os.mkdir(args.outdir)
@@ -62,10 +66,20 @@ if __name__ == '__main__':
         labels.extend(batch['labels'])
     if args.whitening == 1:
         components, mean, data = preprocessing(data)
+
     data = data.reshape((50000, 3, 32, 32)).transpose((0, 2, 3, 1))
     labels = np.asarray(labels, dtype=np.int32)
-    np.save('%s/train_data' % args.outdir, data)
-    np.save('%s/train_labels' % args.outdir, labels)
+    training_data = []
+    training_labels = []
+    for d, l in zip(data, labels):
+        imgs = trans(d)
+        for img in imgs:
+            training_data.append(img)
+            training_labels.append(l)
+    training_data = np.array(training_data, dtype=np.float32)
+    training_labell = np.array(training_labels, dtype=np.int32)
+    np.save('%s/train_data' % args.outdir, training_data)
+    np.save('%s/train_labels' % args.outdir, training_labels)
 
     # saving training dataset
     if not os.path.exists('data/test_data'):

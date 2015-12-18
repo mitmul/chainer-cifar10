@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import math
-
 import chainer
 import chainer.functions as F
 import chainer.links as L

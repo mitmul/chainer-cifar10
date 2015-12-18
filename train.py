@@ -80,20 +80,18 @@ def get_model_optimizer(args):
 
 def augmentation(args, aug_queue, data, label, train):
     trans = Transform(args)
+    np.random.seed(int(time.time()))
     perm = np.random.permutation(data.shape[0])
     if train:
         for i in six.moves.range(0, data.shape[0], args.batchsize):
             chosen_ids = perm[i:i + args.batchsize]
-            aug = np.empty((len(chosen_ids), 24, 24, 3), dtype=np.float32)
-            for j, k in enumerate(chosen_ids):
-                aug[j] = trans(data[k])
-
-            x = np.asarray(aug, dtype=np.float32).transpose((0, 3, 1, 2))
+            x = np.asarray(data[chosen_ids], dtype=np.float32)
+            x = x.transpose((0, 3, 1, 2))
             t = np.asarray(label[chosen_ids], dtype=np.int32)
             aug_queue.put((x, t))
     else:
         for i in six.moves.range(data.shape[0]):
-            aug = trans.testing(data[i])
+            aug = trans(data[i])
             x = np.asarray(aug, dtype=np.float32).transpose((0, 3, 1, 2))
             t = np.asarray(np.repeat(label[i], len(aug)), dtype=np.int32)
             aug_queue.put((x, t))
@@ -168,30 +166,26 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default='models/VGG.py')
     parser.add_argument('--gpu', type=int, default=0)
-    parser.add_argument('--epoch', type=int, default=10000)
+    parser.add_argument('--epoch', type=int, default=1000)
     parser.add_argument('--batchsize', type=int, default=128)
     parser.add_argument('--snapshot', type=int, default=10)
     parser.add_argument('--datadir', type=str, default='data')
 
-    # augmentation
-    parser.add_argument('--cropping', type=int, default=1)
-    parser.add_argument('--scaling', type=int, default=1)
-    parser.add_argument('--flip', type=int, default=1)
-    parser.add_argument('--norm', type=int, default=1)
-    parser.add_argument('--side', type=int, default=24)
-
     # optimization
-    parser.add_argument('--opt', type=str, default='Adam',
+    parser.add_argument('--opt', type=str, default='MomentumSGD',
                         choices=['MomentumSGD', 'Adam', 'AdaGrad'])
     parser.add_argument('--weight_decay', type=float, default=0.0001)
     parser.add_argument('--alpha', type=float, default=0.001)
-    parser.add_argument('--lr', type=float, default=0.1)
-    parser.add_argument('--lr_decay_freq', type=int, default=256)
+    parser.add_argument('--lr', type=float, default=0.01)
+    parser.add_argument('--lr_decay_freq', type=int, default=10)
     parser.add_argument('--lr_decay_ratio', type=float, default=0.1)
+    parser.add_argument('--validate_freq', type=int, default=1)
     parser.add_argument('--seed', type=int, default=1701)
 
     args = parser.parse_args()
     np.random.seed(args.seed)
+    os.environ['CHAINER_TYPE_CHECK'] = '0'
+    os.environ['CHAINER_SEED'] = str(args.seed)
 
     # create result dir
     create_result_dir(args)
@@ -203,10 +197,12 @@ if __name__ == '__main__':
 
     # learning loop
     for epoch in range(1, args.epoch + 1):
-        if args.opt == 'MomentumSGD':
-            logging.info('learning rate:{}'.format(optimizer.lr))
-            if epoch % args.lr_decay_freq == 0:
-                optimizer.lr *= args.lr_decay_ratio
+        logging.info('learning rate:{}'.format(optimizer.lr))
+
+        if args.opt == 'MomentumSGD' and epoch % args.lr_decay_freq == 0:
+            optimizer.lr *= args.lr_decay_ratio
 
         one_epoch(args, model, optimizer, tr_data, tr_labels, epoch, True)
-        one_epoch(args, model, optimizer, te_data, te_labels, epoch, False)
+
+        if epoch == 1 or epoch % args.validate_freq == 0:
+            one_epoch(args, model, optimizer, te_data, te_labels, epoch, False)

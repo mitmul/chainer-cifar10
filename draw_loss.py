@@ -18,7 +18,7 @@ def draw_loss_curve(logfile, outfile, epoch=2):
     test_acc = []
     for line in open(logfile):
         line = line.strip()
-        if 'epoch:' not in line or 'inf' in line:
+        if 'epoch:' not in line or 'inf' in line or 'nan' in line:
             continue
         epoch = int(re.search('epoch:([0-9]+)', line).groups()[0])
         loss = float(re.search('loss:([0-9\.]+)', line).groups()[0])

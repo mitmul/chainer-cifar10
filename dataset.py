@@ -64,8 +64,11 @@ if __name__ == '__main__':
         batch = unpickle(data_fn)
         data[i * 10000:(i + 1) * 10000] = batch['data']
         labels.extend(batch['labels'])
+
     if args.whitening == 1:
         components, mean, data = preprocessing(data)
+        np.save('{}/components'.format(args.outdir), components)
+        np.save('{}/mean'.format(args.outdir), mean)
 
     data = data.reshape((50000, 3, 32, 32)).transpose((0, 2, 3, 1))
     labels = np.asarray(labels, dtype=np.int32)

@@ -13,9 +13,9 @@ class NIN(chainer.Chain):
         w = math.sqrt(2)
         super(NIN, self).__init__(
             mlpconv1=L.MLPConvolution2D(
-                3, (192, 192, 192), 5, pad=2, wscale=w),
+                3, (192, 160, 96), 5, pad=2, wscale=w),
             mlpconv2=L.MLPConvolution2D(
-                192, (192, 192, 192), 5, pad=2, wscale=w),
+                96, (192, 192, 192), 5, pad=2, wscale=w),
             mlpconv3=L.MLPConvolution2D(
                 192, (192, 192, 10), 3, pad=1, wscale=w),
         )
@@ -36,7 +36,7 @@ class NIN(chainer.Chain):
         self.pred = F.softmax(self.y)
 
         self.loss = F.softmax_cross_entropy(self.y, t)
-        self.accuracy = F.accuracy(self.pred, t)
+        self.accuracy = F.accuracy(self.y, t)
 
         if self.train:
             return self.loss

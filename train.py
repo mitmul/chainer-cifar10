@@ -166,7 +166,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default='models/VGG.py')
     parser.add_argument('--gpu', type=int, default=0)
-    parser.add_argument('--epoch', type=int, default=1000)
+    parser.add_argument('--epoch', type=int, default=100)
     parser.add_argument('--batchsize', type=int, default=128)
     parser.add_argument('--snapshot', type=int, default=10)
     parser.add_argument('--datadir', type=str, default='data')
@@ -181,10 +181,11 @@ if __name__ == '__main__':
     parser.add_argument('--lr_decay_ratio', type=float, default=0.1)
     parser.add_argument('--validate_freq', type=int, default=1)
     parser.add_argument('--seed', type=int, default=1701)
+    parser.add_argument('--type_check', type=int, default=0)
 
     args = parser.parse_args()
     np.random.seed(args.seed)
-    os.environ['CHAINER_TYPE_CHECK'] = '0'
+    os.environ['CHAINER_TYPE_CHECK'] = str(args.type_check)
     os.environ['CHAINER_SEED'] = str(args.seed)
 
     # create result dir
@@ -197,10 +198,9 @@ if __name__ == '__main__':
 
     # learning loop
     for epoch in range(1, args.epoch + 1):
-        logging.info('learning rate:{}'.format(optimizer.lr))
-
         if args.opt == 'MomentumSGD' and epoch % args.lr_decay_freq == 0:
             optimizer.lr *= args.lr_decay_ratio
+        logging.info('learning rate:{}'.format(optimizer.lr))
 
         one_epoch(args, model, optimizer, tr_data, tr_labels, epoch, True)
 

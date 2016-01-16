@@ -41,9 +41,9 @@ def draw_loss_curve(logfile, outfile, epoch=2):
     plt.clf()
     fig, ax1 = plt.subplots()
     ax1.plot(train_loss[:, 0], train_loss[:, 1],
-             label='training loss', c='b')
-    ax1.plot(test_loss[:, 0], test_loss[:, 1],
-             label='test loss', c='g')
+             label='training loss', c='g')
+    # ax1.plot(test_loss[:, 0], test_loss[:, 1],
+    #  label='test loss', c='g')
     ax1.set_xlim([1, len(train_loss)])
     ax1.set_xlabel('epoch')
     ax1.set_ylabel('loss')

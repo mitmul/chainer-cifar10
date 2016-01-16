@@ -46,7 +46,7 @@ def preprocessing(data):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--outdir', type=str, default='data')
-    parser.add_argument('--whitening', type=int, default=1)
+    parser.add_argument('--whitening', type=int, default=0)
     parser.add_argument('--norm', type=int, default=1)
     args = parser.parse_args()
     print(args)

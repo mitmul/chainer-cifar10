@@ -96,6 +96,7 @@ def augmentation(args, aug_queue, data, label, train):
             t = np.asarray(np.repeat(label[i], len(aug)), dtype=np.int32)
             aug_queue.put((x, t))
     aug_queue.put(None)
+    return
 
 
 def one_epoch(args, model, optimizer, data, label, epoch, train):
@@ -107,6 +108,7 @@ def one_epoch(args, model, optimizer, data, label, epoch, train):
     aug_worker = Process(target=augmentation,
                          args=(args, aug_queue, data, label, train))
     aug_worker.start()
+    logging.info('data loading started')
 
     sum_accuracy = 0
     sum_loss = 0
@@ -161,6 +163,7 @@ def one_epoch(args, model, optimizer, data, label, epoch, train):
                               '{}/log.png'.format(args.result_dir), epoch)
 
     aug_worker.join()
+    logging.info('data loading finished')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -177,16 +180,15 @@ if __name__ == '__main__':
     parser.add_argument('--weight_decay', type=float, default=0.0001)
     parser.add_argument('--alpha', type=float, default=0.001)
     parser.add_argument('--lr', type=float, default=0.01)
-    parser.add_argument('--lr_decay_freq', type=int, default=10)
+    parser.add_argument('--lr_decay_freq', type=int, default=5)
     parser.add_argument('--lr_decay_ratio', type=float, default=0.1)
     parser.add_argument('--validate_freq', type=int, default=1)
     parser.add_argument('--seed', type=int, default=1701)
-    parser.add_argument('--type_check', type=int, default=0)
 
     args = parser.parse_args()
     np.random.seed(args.seed)
-    os.environ['CHAINER_TYPE_CHECK'] = str(args.type_check)
-    os.environ['CHAINER_SEED'] = str(args.seed)
+    # os.environ['CHAINER_TYPE_CHECK'] = str(args.type_check)
+    # os.environ['CHAINER_SEED'] = str(args.seed)
 
     # create result dir
     create_result_dir(args)
@@ -198,11 +200,12 @@ if __name__ == '__main__':
 
     # learning loop
     for epoch in range(1, args.epoch + 1):
-        if args.opt == 'MomentumSGD' and epoch % args.lr_decay_freq == 0:
-            optimizer.lr *= args.lr_decay_ratio
         logging.info('learning rate:{}'.format(optimizer.lr))
 
         one_epoch(args, model, optimizer, tr_data, tr_labels, epoch, True)
 
         if epoch == 1 or epoch % args.validate_freq == 0:
             one_epoch(args, model, optimizer, te_data, te_labels, epoch, False)
+
+        if args.opt == 'MomentumSGD' and epoch % args.lr_decay_freq == 0:
+            optimizer.lr *= args.lr_decay_ratio

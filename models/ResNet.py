@@ -8,18 +8,14 @@ import chainer.links as L
 import chainer.functions as F
 
 
-def Convolution2D(in_size, ch, ksize, stride, pad=0):
-    return L.Convolution2D(in_size, ch, ksize, stride, pad,
-                           math.sqrt(2 / (ksize ** 2 * in_size)))
-
-
 class ResBlock(chainer.Chain):
 
     def __init__(self, n_in, n_out, stride=1, ksize=1):
+        w = math.sqrt(2)
         super(ResBlock, self).__init__(
-            conv1=Convolution2D(n_in, n_out, 3, stride, 1),
+            conv1=L.Convolution2D(n_in, n_out, 3, stride, 1, w),
             bn1=L.BatchNormalization(n_out),
-            conv2=Convolution2D(n_out, n_out, 3, 1, 1),
+            conv2=L.Convolution2D(n_out, n_out, 3, 1, 1, w),
             bn2=L.BatchNormalization(n_out),
         )
 
@@ -42,7 +38,8 @@ class ResNet(chainer.Chain):
 
     def __init__(self, block_class, n=18):
         super(ResNet, self).__init__()
-        links = [('conv1', Convolution2D(3, 16, 3, 1))]
+        w = math.sqrt(2)
+        links = [('conv1', L.Convolution2D(3, 16, 3, 1, 0, w))]
         links += [('bn1', L.BatchNormalization(16))]
         for i in range(n):
             links += [('res{}'.format(len(links)), block_class(16, 16))]

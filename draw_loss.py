@@ -1,14 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import argparse
+import numpy as np
 import re
 import sys
-import matplotlib
+
 if 'linux' in sys.platform:
+    import matplotlib
     matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import numpy as np
-import argparse
+    import matplotlib.pyplot as plt
+else:
+    import matplotlib.pyplot as plt
 
 
 def draw_loss_curve(logfile, outfile, epoch=2):

@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import math
-
 import chainer
-import chainer.links as L
 import chainer.functions as F
+import chainer.links as L
+import math
 
 
 class ResBlock(chainer.Chain):

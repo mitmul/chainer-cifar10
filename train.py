@@ -1,25 +1,26 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import argparse
-import logging
-import time
-import os
-import imp
-import shutil
-import six
-import chainer
-import draw_loss
-import numpy as np
-from dataset import load_dataset
-from transform import Transform
-from multiprocessing import Process
-from multiprocessing import Queue
-from chainer import optimizers
+from chainer import computational_graph
 from chainer import cuda
+from chainer import optimizers
 from chainer import serializers
 from chainer import Variable
-from chainer import computational_graph
+from dataset import load_dataset
+from multiprocessing import Process
+from multiprocessing import Queue
+from transform import Transform
+
+import argparse
+import chainer
+import draw_loss
+import imp
+import logging
+import numpy as np
+import os
+import shutil
+import six
+import time
 
 
 def create_result_dir(args):

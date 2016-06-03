@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
-import argparse
-import six
-import numpy as np
-from skimage.io import imsave
 from scipy.misc import imresize
+from skimage.io import imsave
+
+import argparse
+import numpy as np
+import os
+import six
 
 
 class Transform(object):

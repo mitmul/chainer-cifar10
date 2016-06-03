@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from scipy import linalg
+from six.moves import cPickle as pickle
+from skimage.io import imsave
+from transform import Transform
+
+import argparse
+import glob
+import numpy as np
 import os
 import sys
-import glob
-import argparse
-import numpy as np
-from skimage.io import imsave
-from six.moves import cPickle as pickle
-from scipy import linalg
-from transform import Transform
 
 
 def unpickle(file):
@@ -79,10 +80,8 @@ if __name__ == '__main__':
         for img in imgs:
             training_data.append(img)
             training_labels.append(l)
-    training_data = np.array(training_data, dtype=np.float32)
-    training_labell = np.array(training_labels, dtype=np.int32)
-    np.save('%s/train_data' % args.outdir, training_data)
-    np.save('%s/train_labels' % args.outdir, training_labels)
+    np.save('%s/train_data' % args.outdir, training_data.astype(np.float32))
+    np.save('%s/train_labels' % args.outdir, training_labels.astype(np.int32))
 
     # saving training dataset
     if not os.path.exists('data/test_data'):

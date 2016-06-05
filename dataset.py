@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
 from scipy import linalg
 from six.moves import cPickle as pickle
 from skimage.io import imsave
@@ -80,8 +84,10 @@ if __name__ == '__main__':
         for img in imgs:
             training_data.append(img)
             training_labels.append(l)
-    np.save('%s/train_data' % args.outdir, training_data.astype(np.float32))
-    np.save('%s/train_labels' % args.outdir, training_labels.astype(np.int32))
+    np.save('%s/train_data' % args.outdir,
+            np.asarray(training_data, dtype=np.float32))
+    np.save('%s/train_labels' % args.outdir,
+            np.asarray(training_labels, dtype=np.int32))
 
     # saving training dataset
     if not os.path.exists('data/test_data'):

@@ -135,8 +135,8 @@ def one_epoch(args, model, optimizer, data, label, epoch, train):
                     g = computational_graph.build_computational_graph(
                         (model.loss, ), remove_split=True)
                     o.write(g.dump())
-            sum_loss += float(model.loss.data) * t.data.shape[0]
-            sum_accuracy += float(model.accuracy.data) * t.data.shape[0]
+            sum_loss += float(model.loss.data) * len(t.data)
+            sum_accuracy += float(model.accuracy.data) * len(t.data)
             num += t.data.shape[0]
             logging.info('{:05d}/{:05d}\tloss:{:.3f}\tacc:{:.3f}'.format(
                 num, data.shape[0], sum_loss / num, sum_accuracy / num))

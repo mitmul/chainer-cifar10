@@ -51,7 +51,7 @@ def preprocessing(data):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--outdir', type=str, default='data')
-    parser.add_argument('--whitening', type=int, default=0)
+    parser.add_argument('--whitening', action='store_true', default=False)
     parser.add_argument('--norm', type=int, default=1)
     args = parser.parse_args()
     print(args)
@@ -70,7 +70,7 @@ if __name__ == '__main__':
         data[i * 10000:(i + 1) * 10000] = batch['data']
         labels.extend(batch['labels'])
 
-    if args.whitening == 1:
+    if args.whitening:
         components, mean, data = preprocessing(data)
         np.save('{}/components'.format(args.outdir), components)
         np.save('{}/mean'.format(args.outdir), mean)
@@ -101,7 +101,7 @@ if __name__ == '__main__':
 
     test = unpickle('cifar-10-batches-py/test_batch')
     data = np.asarray(test['data'], dtype=np.float)
-    if args.whitening == 1:
+    if args.whitening:
         mdata = data - mean
         data = np.dot(mdata, components.T)
     data = data.reshape((10000, 3, 32, 32)).transpose((0, 2, 3, 1))

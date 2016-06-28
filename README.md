@@ -1,10 +1,13 @@
 # chainer-cifar10
 
 ## Requirement
-- Chainer v1.5.0.2
-- scikit-image 0.11.3
-- scipy 0.16.0
-- numpy 1.10. 1
+
+- Python 2.7.6+, 3.5.1+
+
+  - Chainer 1.10.0+
+  - scikit-image 0.11.3
+  - scipy 0.16.0
+  - numpy 1.10\. 1
 
 ## Download & Construct Cifar10 Dataset
 
@@ -27,7 +30,6 @@ $ python draw_loss.py --logfile log.txt --outfile log.jpg
 ## Deep Residual Network (ResNet-110)
 
 ```
-$ python dataset.py --whitening 0
 $ python train.py --model models/ResNet.py --lr 0.1 --gpu 0
 ```
 

@@ -10,10 +10,8 @@ from chainer import cuda
 from chainer import optimizers
 from chainer import serializers
 from chainer import Variable
-from dataset import load_dataset
 from multiprocessing import Process
 from multiprocessing import Queue
-from transform import Transform
 
 import argparse
 import chainer
@@ -24,7 +22,19 @@ import numpy as np
 import os
 import shutil
 import six
+import sys
 import time
+
+if 'linux' in sys.platform:
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    from transform import Transform
+    from dataset import load_dataset
+else:
+    import matplotlib.pyplot as plt
+    from transform import Transform
+    from dataset import load_dataset
 
 
 def create_result_dir(args):

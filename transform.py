@@ -32,7 +32,7 @@ class Transform(object):
                 # global contrast normalization
                 im = im.astype(np.float)
                 im -= im.reshape(-1, 3).mean(axis=0)
-                im -= im.reshape(-1, 3).std(axis=0) + 1e-5
+                im /= im.reshape(-1, 3).std(axis=0) + 1e-5
 
                 imgs.append(im)
                 imgs.append(np.fliplr(im))
@@ -46,7 +46,7 @@ class Transform(object):
                 # global contrast normalization
                 im = im.astype(np.float)
                 im -= im.reshape(-1, 3).mean(axis=0)
-                im -= im.reshape(-1, 3).std(axis=0) + 1e-5
+                im /= im.reshape(-1, 3).std(axis=0) + 1e-5
 
                 imgs.append(im)
                 imgs.append(np.fliplr(im))

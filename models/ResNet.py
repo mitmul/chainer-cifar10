@@ -44,16 +44,16 @@ class Block(chainer.ChainList):
 
 class ResNet(chainer.Chain):
 
-    def __init__(self, n_class=10, n_blocks=[3, 4, 23, 3]):
+    def __init__(self, n_class=10, n_blocks=[3, 4, 6, 3]):
         super(ResNet, self).__init__()
         w = chainer.initializers.HeNormal()
         with self.init_scope():
-            self.conv1 = L.Convolution2D(None, 64, 7, 2, 3, True, w)
+            self.conv1 = L.Convolution2D(None, 64, 3, 1, 1, True, w)
             self.bn2 = L.BatchNormalization(64)
             self.res3 = Block(64, 64, 256, n_blocks[0], 1)
-            self.res4 = Block(256, 128, 512, n_blocks[1])
-            self.res5 = Block(512, 256, 1024, n_blocks[2])
-            self.res6 = Block(1024, 512, 2048, n_blocks[3])
+            self.res4 = Block(256, 128, 512, n_blocks[1], 2)
+            self.res5 = Block(512, 256, 1024, n_blocks[2], 2)
+            self.res6 = Block(1024, 512, 2048, n_blocks[3], 2)
             self.fc7 = L.Linear(None, n_class)
 
     def __call__(self, x):
@@ -63,5 +63,30 @@ class ResNet(chainer.Chain):
         h = self.res5(h)
         h = self.res6(h)
         h = F.average_pooling_2d(h, h.shape[2:])
-        h = self.fc6(h)
+        h = self.fc7(h)
         return h
+
+
+class ResNet50(ResNet):
+
+    def __init__(self, n_class=10):
+        super(ResNet50, self).__init__(n_class, [3, 4, 6, 3])
+
+
+class ResNet101(ResNet):
+
+    def __init__(self, n_class=10):
+        super(ResNet101, self).__init__(n_class, [3, 4, 23, 3])
+
+
+class ResNet152(ResNet):
+
+    def __init__(self, n_class=10):
+        super(ResNet152, self).__init__(n_class, [3, 8, 36, 3])
+
+
+if __name__ == '__main__':
+    import numpy as np
+    x = np.random.randn(1, 3, 32, 32).astype(np.float32)
+    model = ResNet(10)
+    y = model(x)

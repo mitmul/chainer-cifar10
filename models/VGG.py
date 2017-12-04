@@ -31,7 +31,7 @@ class VGG(chainer.Chain):
             self.fc5 = L.Linear(1024, 1024)
             self.fc6 = L.Linear(1024, n_class)
 
-    def __call__(self, x, t):
+    def __call__(self, x):
         h = F.relu(self.bn1_1(self.conv1_1(x)))
         h = F.relu(self.bn1_2(self.conv1_2(h)))
         h = F.max_pooling_2d(h, 2, 2)

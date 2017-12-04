@@ -9,40 +9,44 @@ from __future__ import unicode_literals
 import argparse
 from functools import partial
 from importlib import import_module
+import json
 import os
 import random
 import re
+import shutil
 import time
 
 import chainer
+from chainer.datasets import cifar
+from chainer.datasets import TransformDataset
 from chainer import iterators
+import chainer.links as L
 from chainer import optimizers
 from chainer import training
-from chainer.datasets import TransformDataset
-from chainer.datasets import cifar
 from chainer.training import extensions
 import numpy as np
-import six
 
 from chainercv import transforms
 
 
-def transform(inputs, train=True):
+def transform(
+        inputs, mean, std, pca_sigma, expand_ratio, crop_size, train=True):
     img, label = inputs
+    img = img.copy()
 
-    # Color augmentation
+    # Color augmentation and Flipping
     if train:
-        img = transforms.pca_lighting(img, 25.5)
-        img = transforms.random_flip(img)
+        img = transforms.pca_lighting(img, pca_sigma)
 
-    # Per-image standardization
-    img -= img.mean(axis=(1, 2))[:, None, None]
-    img /= img.std(axis=(1, 2))[:, None, None] + 1e-8
+    # Standardization
+    img -= mean[:, None, None]
+    img /= std[:, None, None]
 
-    # Random expand
+    # Random crop
     if train:
-        img = transforms.random_expand(img, max_ratio=1.5)
-        img = transforms.random_crop(img, (32, 32))
+        img = transforms.random_flip(img, x_random=True)
+        img = transforms.random_expand(img, max_ratio=expand_ratio)
+        img = transforms.random_crop(img, tuple(crop_size))
 
     return img, label
 
@@ -55,6 +59,7 @@ def create_result_dir(prefix):
         result_dir = re.sub('_[0-9]+$', result_dir, '_{}'.format(i))
     if not os.path.exists(result_dir):
         os.makedirs(result_dir)
+    shutil.copy(__file__, os.path.join(result_dir, os.path.basename(__file__)))
     return result_dir
 
 
@@ -108,29 +113,48 @@ if __name__ == '__main__':
     parser.add_argument('--model_file', type=str, default='models/ResNet.py')
     parser.add_argument('--model_name', type=str, default='ResNet')
     parser.add_argument('--gpus', type=int, nargs='*', default=[0])
-    parser.add_argument('--batchsize', type=int, default=64)
+    parser.add_argument('--batchsize', type=int, default=128)
     parser.add_argument('--seed', type=int, default=0)
+
+    # Data augmentation settings
+    parser.add_argument('--pca_sigma', type=float, default=51)
+    parser.add_argument('--expand_ratio', type=float, default=1.5)
+    parser.add_argument('--crop_size', type=int, nargs='*', default=[28, 28])
     args = parser.parse_args()
 
     # Set the random seeds
     random.seed(args.seed)
     np.random.seed(args.seed)
     if len(args.gpus) > 1 or args.gpus[0] >= 0:
-        chainer.cuda.cupy.seed(args.seed)
+        chainer.cuda.cupy.random.seed(args.seed)
+        gpus = {'main': args.gpus[0]}
+        if len(args.gpus) > 1:
+            gpus.update({'gpu{}'.format(i): i for i in args.gpus[1:]})
+        args.gpus = gpus
 
     # Load model
     ext = os.path.splitext(args.model_file)[1]
     mod_path = '.'.join(os.path.split(args.model_file)).replace(ext, '')
     mod = import_module(mod_path)
-    model = getattr(mod, args.model_name)(10)
+    net = getattr(mod, args.model_name)(10)
 
     # create result dir
-    result_dir = create_result_dir(
-        os.path.splitext(os.path.basename(args.model))[0])
+    result_dir = create_result_dir(args.model_name)
+    shutil.copy(args.model_file, os.path.join(
+        result_dir, os.path.basename(args.model_file)))
+    with open(os.path.join(result_dir, 'args'), 'w') as fp:
+        fp.write(json.dumps(vars(args)))
 
     train, valid = cifar.get_cifar10(scale=255.)
+    mean = np.mean([x for x, _ in train], axis=(0, 2, 3))
+    std = np.std([x for x, _ in train], axis=(0, 2, 3))
 
-    train = TransformDataset(train, partial(transform, train=True))
-    valid = TransformDataset(valid, partial(transform, train=False))
+    train_transform = partial(
+        transform, mean=mean, std=std, pca_sigma=args.pca_sigma,
+        expand_ratio=args.expand_ratio, crop_size=args.crop_size, train=True)
+    valid_transform = partial(transform, mean=mean, std=std, train=False)
+
+    train = TransformDataset(train, train_transform)
+    valid = TransformDataset(valid, valid_transform)
 
     run_training(net, train, valid, result_dir, args.batchsize, args.gpus)

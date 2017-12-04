@@ -1,91 +1,67 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 import chainer
 import chainer.functions as F
 import chainer.links as L
-import math
 
 
-class Module(chainer.Chain):
+class BottleNeck(chainer.Chain):
 
-    def __init__(self, n_in, n_out, stride=1):
-        w = math.sqrt(2)
-        super(Module, self).__init__(
-            conv1=L.Convolution2D(n_in, n_out, 3, stride, 1, w, nobias=True),
-            bn1=L.BatchNormalization(n_out),
-            conv2=L.Convolution2D(n_out, n_out, 3, 1, 1, w, nobias=True),
-            bn2=L.BatchNormalization(n_out),
-        )
+    def __init__(self, n_in, n_mid, n_out, stride=1, use_conv=False):
+        w = chainer.initializers.HeNormal()
+        super(BottleNeck, self).__init__()
+        with self.init_scope():
+            self.conv1 = L.Convolution2D(n_in, n_mid, 1, stride, 0, True, w)
+            self.bn1 = L.BatchNormalization(n_mid)
+            self.conv2 = L.Convolution2D(n_mid, n_mid, 3, 1, 1, True, w)
+            self.bn2 = L.BatchNormalization(n_mid)
+            self.conv3 = L.Convolution2D(n_mid, n_out, 1, 1, 0, True, w)
+            self.bn3 = L.BatchNormalization(n_out)
+            if use_conv:
+                self.conv4 = L.Convolution2D(
+                    n_in, n_out, 1, stride, 0, True, w)
+                self.bn4 = L.BatchNormalization(n_out)
+        self.use_conv = use_conv
 
-    def __call__(self, x, train):
-        h = F.relu(self.bn1(self.conv1(x), test=not train))
-        h = self.bn2(self.conv2(h), test=not train)
-        if x.data.shape != h.data.shape:
-            xp = chainer.cuda.get_array_module(x.data)
-            if x.data.shape[2:] != h.data.shape[2:]:
-                x = F.average_pooling_2d(x, 1, 2)
-            if x.data.shape[1] != h.data.shape[1]:
-                x = F.concat((x, x * 0))
-        return F.relu(h + x)
+    def __call__(self, x):
+        h = F.relu(self.bn1(self.conv1(x)))
+        h = F.relu(self.bn2(self.conv2(h)))
+        h = self.bn3(self.conv3(h))
+        return h + self.bn4(self.conv4(x)) if self.use_conv else h + x
 
 
-class Block(chainer.Chain):
+class Block(chainer.ChainList):
 
-    def __init__(self, n_in, n_out, n, stride=1):
+    def __init__(self, n_in, n_mid, n_out, n_bottlenecks, stride=2):
         super(Block, self).__init__()
-        links = [('m0', Module(n_in, n_out, stride))]
-        links += [('m{}'.format(i + 1), Module(n_out, n_out))
-                  for i in range(n - 1)]
-        for link in links:
-            self.add_link(*link)
-        self.forward = links
+        self.add_link(BottleNeck(n_in, n_mid, n_out, stride, True))
+        for _ in range(n_bottlenecks - 1):
+            self.add_link(BottleNeck(n_out, n_mid, n_out))
 
-    def __call__(self, x, train):
-        for name, _ in self.forward:
-            x = getattr(self, name)(x, train)
+    def __call__(self, x):
+        for f in self:
+            x = f(x)
         return x
 
 
 class ResNet(chainer.Chain):
 
-    def __init__(self, n=18):
+    def __init__(self, n_class=10, n_blocks=[3, 4, 23, 3]):
         super(ResNet, self).__init__()
-        w = math.sqrt(2)
-        links = [('conv1', L.Convolution2D(3, 16, 3, 1, 0, w)),
-                 ('bn2', L.BatchNormalization(16)),
-                 ('_relu3', F.ReLU()),
-                 ('res4', Block(16, 32, n)),
-                 ('res5', Block(32, 64, n, 2)),
-                 ('res6', Block(64, 64, n, 2)),
-                 ('_apool7', F.AveragePooling2D(6, 1, 0, False, True)),
-                 ('fc8', L.Linear(64, 10))]
-        for link in links:
-            if not link[0].startswith('_'):
-                self.add_link(*link)
-        self.forward = links
-        self.train = True
+        w = chainer.initializers.HeNormal()
+        with self.init_scope():
+            self.conv1 = L.Convolution2D(None, 64, 7, 2, 3, True, w)
+            self.bn2 = L.BatchNormalization(64)
+            self.res3 = Block(64, 64, 256, n_blocks[0], 1)
+            self.res4 = Block(256, 128, 512, n_blocks[1])
+            self.res5 = Block(512, 256, 1024, n_blocks[2])
+            self.res6 = Block(1024, 512, 2048, n_blocks[3])
+            self.fc7 = L.Linear(None, n_class)
 
-    def clear(self):
-        self.loss = None
-        self.accuracy = None
-
-    def __call__(self, x, t):
-        self.clear()
-        for name, f in self.forward:
-            if 'res' in name:
-                x = getattr(self, name)(x, self.train)
-            elif name.startswith('bn'):
-                x = getattr(self, name)(x, not self.train)
-            elif name.startswith('_'):
-                x = f(x)
-            else:
-                x = getattr(self, name)(x)
-        if self.train:
-            self.loss = F.softmax_cross_entropy(x, t)
-            self.accuracy = F.accuracy(x, t)
-            return self.loss
-        else:
-            return x
-
-model = ResNet()
+    def __call__(self, x):
+        h = F.relu(self.bn2(self.conv1(x)))
+        h = self.res3(h)
+        h = self.res4(h)
+        h = self.res5(h)
+        h = self.res6(h)
+        h = F.average_pooling_2d(h, h.shape[2:])
+        h = self.fc6(h)
+        return h

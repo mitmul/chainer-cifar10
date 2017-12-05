@@ -48,7 +48,7 @@ class ResNet(chainer.Chain):
         super(ResNet, self).__init__()
         w = chainer.initializers.HeNormal()
         with self.init_scope():
-            self.conv1 = L.Convolution2D(None, 64, 3, 1, 1, True, w)
+            self.conv1 = L.Convolution2D(None, 64, 3, 1, 0, True, w)
             self.bn2 = L.BatchNormalization(64)
             self.res3 = Block(64, 64, 256, n_blocks[0], 1)
             self.res4 = Block(256, 128, 512, n_blocks[1], 2)

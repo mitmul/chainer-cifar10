@@ -27,26 +27,48 @@ from chainer.training import extensions
 import numpy as np
 
 from chainercv import transforms
+import cv2 as cv
+
+
+# scikit-image's rotate function is almost 7x slower than OpenCV
+def cv_rotate(img, angle):
+    center = (img.shape[0] // 2, img.shape[1] // 2)
+    r = cv.getRotationMatrix2D(center, angle, 1.0)
+    img = cv.warpAffine(img, r, img.shape[:2])
+    return img
 
 
 def transform(
-        inputs, mean, std, pca_sigma, expand_ratio, crop_size, train=True):
+        inputs, mean, std, random_angle=15., pca_sigma=255., expand_ratio=1.0,
+        crop_size=(32, 32), train=True):
     img, label = inputs
     img = img.copy()
 
+    # Random rotate
+    if random_angle != 0.0:
+        angle = np.random.uniform(-random_angle, random_angle)
+        img = img.transpose(1, 2, 0) / 255.
+        img = cv_rotate(img, angle)
+        img = img.transpose(2, 0, 1) * 255.
+        img = img.astype(np.float32)
+
     # Color augmentation and Flipping
-    if train:
+    if train and pca_sigma != 255.:
         img = transforms.pca_lighting(img, pca_sigma)
 
     # Standardization
     img -= mean[:, None, None]
     img /= std[:, None, None]
 
-    # Random crop
     if train:
+        # Random flip
         img = transforms.random_flip(img, x_random=True)
-        img = transforms.random_expand(img, max_ratio=expand_ratio)
-        img = transforms.random_crop(img, tuple(crop_size))
+        # Random expand
+        if expand_ratio > 1.0:
+            img = transforms.random_expand(img, max_ratio=expand_ratio)
+        # Random crop
+        if tuple(crop_size) != (32, 32):
+            img = transforms.random_crop(img, tuple(crop_size))
 
     return img, label
 
@@ -117,7 +139,8 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, default=0)
 
     # Data augmentation settings
-    parser.add_argument('--pca_sigma', type=float, default=51)
+    parser.add_argument('--random_angle', type=float, default=15.0)
+    parser.add_argument('--pca_sigma', type=float, default=75.5)
     parser.add_argument('--expand_ratio', type=float, default=1.5)
     parser.add_argument('--crop_size', type=int, nargs='*', default=[28, 28])
     args = parser.parse_args()
@@ -144,14 +167,16 @@ if __name__ == '__main__':
         result_dir, os.path.basename(args.model_file)))
     with open(os.path.join(result_dir, 'args'), 'w') as fp:
         fp.write(json.dumps(vars(args)))
+    print(json.dumps(vars(args), sort_keys=True, indent=4))
 
     train, valid = cifar.get_cifar10(scale=255.)
     mean = np.mean([x for x, _ in train], axis=(0, 2, 3))
     std = np.std([x for x, _ in train], axis=(0, 2, 3))
 
     train_transform = partial(
-        transform, mean=mean, std=std, pca_sigma=args.pca_sigma,
-        expand_ratio=args.expand_ratio, crop_size=args.crop_size, train=True)
+        transform, mean=mean, std=std, random_angle=args.random_angle,
+        pca_sigma=args.pca_sigma, expand_ratio=args.expand_ratio,
+        crop_size=args.crop_size, train=True)
     valid_transform = partial(transform, mean=mean, std=std, train=False)
 
     train = TransformDataset(train, train_transform)

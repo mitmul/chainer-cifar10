@@ -11,10 +11,10 @@ class Cifar10(chainer.Chain):
             self.conv1 = L.Convolution2D(3, 32, 5, stride=1, pad=2)
             self.conv2 = L.Convolution2D(32, 32, 5, stride=1, pad=2)
             self.conv3 = L.Convolution2D(32, 64, 5, stride=1, pad=2)
-            self.fc4 = F.Linear(None, 4096)
-            self.fc5 = F.Linear(4096, n_class)
+            self.fc4 = L.Linear(None, 4096)
+            self.fc5 = L.Linear(4096, n_class)
 
-    def __call__(self, x, t):
+    def __call__(self, x):
         h = F.max_pooling_2d(F.relu(self.conv1(x)), 3, stride=2)
         h = F.max_pooling_2d(F.relu(self.conv2(h)), 3, stride=2)
         h = F.relu(self.conv3(h))

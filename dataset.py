@@ -16,8 +16,13 @@ std = np.std([x for x, _ in train_orig], axis=(0, 2, 3))
 print('mean:', mean)
 print('std:', std)
 
-train_transform = partial(train_module.transform,
-                          mean=mean, std=std, train=True)
+pca_sigma = 75.5
+expand_ratio = 1.0
+crop_size = [28, 28]
+
+train_transform = partial(
+    train_module.transform, mean=mean, std=std, pca_sigma=pca_sigma,
+        expand_ratio=expand_ratio, crop_size=crop_size, train=True)
 train = TransformDataset(train_orig, train_transform)
 
 for i, (img, label) in enumerate(train[:10]):

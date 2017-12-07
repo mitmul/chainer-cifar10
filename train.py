@@ -16,25 +16,37 @@ import re
 import shutil
 import time
 
-import chainer
-from chainer.datasets import cifar
-from chainer.datasets import TransformDataset
-from chainer import iterators
-import chainer.links as L
-from chainer import optimizers
-from chainer import training
-from chainer.training import extensions
 import numpy as np
 
+import chainer
+from chainer import iterators
+from chainer import optimizers
+from chainer import training
+from chainer.datasets import TransformDataset
+from chainer.datasets import cifar
+import chainer.links as L
+from chainer.training import extensions
 from chainercv import transforms
 import cv2 as cv
+from skimage import transform as skimage_transform
+
+USE_OPENCV = False
 
 
-# scikit-image's rotate function is almost 7x slower than OpenCV
 def cv_rotate(img, angle):
-    center = (img.shape[0] // 2, img.shape[1] // 2)
-    r = cv.getRotationMatrix2D(center, angle, 1.0)
-    img = cv.warpAffine(img, r, img.shape[:2])
+    if USE_OPENCV:
+        img = img.transpose(1, 2, 0) / 255.
+        center = (img.shape[0] // 2, img.shape[1] // 2)
+        r = cv.getRotationMatrix2D(center, angle, 1.0)
+        img = cv.warpAffine(img, r, img.shape[:2])
+        img = img.transpose(2, 0, 1) * 255.
+        img = img.astype(np.float32)
+    else:
+        # scikit-image's rotate function is almost 7x slower than OpenCV
+        img = img.transpose(1, 2, 0) / 255.
+        img = skimage_transform.rotate(img, angle, mode='edge')
+        img = img.transpose(2, 0, 1) * 255.
+        img = img.astype(np.float32)
     return img
 
 
@@ -45,15 +57,12 @@ def transform(
     img = img.copy()
 
     # Random rotate
-    if random_angle != 0.0:
+    if random_angle != 0:
         angle = np.random.uniform(-random_angle, random_angle)
-        img = img.transpose(1, 2, 0) / 255.
         img = cv_rotate(img, angle)
-        img = img.transpose(2, 0, 1) * 255.
-        img = img.astype(np.float32)
 
     # Color augmentation and Flipping
-    if train and pca_sigma != 255.:
+    if train and pca_sigma != 0:
         img = transforms.pca_lighting(img, pca_sigma)
 
     # Standardization
@@ -64,7 +73,7 @@ def transform(
         # Random flip
         img = transforms.random_flip(img, x_random=True)
         # Random expand
-        if expand_ratio > 1.0:
+        if expand_ratio > 1:
             img = transforms.random_expand(img, max_ratio=expand_ratio)
         # Random crop
         if tuple(crop_size) != (32, 32):
@@ -85,7 +94,10 @@ def create_result_dir(prefix):
     return result_dir
 
 
-def run_training(net, train, valid, result_dir, batchsize=64, devices=-1):
+def run_training(
+        net, train, valid, result_dir, batchsize=64, devices=-1,
+        training_epoch=300, initial_lr=0.05, lr_decay_rate=0.5,
+        lr_decay_epoch=30, weight_decay=0.0005):
     # Iterator
     train_iter = iterators.MultiprocessIterator(train, batchsize)
     test_iter = iterators.MultiprocessIterator(valid, batchsize, False, False)
@@ -94,9 +106,10 @@ def run_training(net, train, valid, result_dir, batchsize=64, devices=-1):
     net = L.Classifier(net)
 
     # Optimizer
-    optimizer = optimizers.MomentumSGD(lr=0.1)
+    optimizer = optimizers.MomentumSGD(lr=initial_lr)
     optimizer.setup(net)
-    optimizer.add_hook(chainer.optimizer.WeightDecay(0.0005))
+    if weight_decay > 0:
+        optimizer.add_hook(chainer.optimizer.WeightDecay(weight_decay))
 
     # Updater
     if isinstance(devices, int):
@@ -108,7 +121,8 @@ def run_training(net, train, valid, result_dir, batchsize=64, devices=-1):
             train_iter, optimizer, devices=devices)
 
     # 6. Trainer
-    trainer = training.Trainer(updater, (100, 'epoch'), out=result_dir)
+    trainer = training.Trainer(
+        updater, (training_epoch, 'epoch'), out=result_dir)
 
     # 7. Trainer extensions
     trainer.extend(extensions.LogReport())
@@ -123,8 +137,8 @@ def run_training(net, train, valid, result_dir, batchsize=64, devices=-1):
     trainer.extend(extensions.PlotReport(
         ['main/accuracy', 'val/main/accuracy'], x_key='epoch',
         file_name='accuracy.png'))
-    trainer.extend(
-        extensions.ExponentialShift('lr', 0.1), trigger=(30, 'epoch'))
+    trainer.extend(extensions.ExponentialShift(
+        'lr', lr_decay_rate), trigger=(lr_decay_epoch, 'epoch'))
     trainer.run()
 
     return net
@@ -132,18 +146,28 @@ def run_training(net, train, valid, result_dir, batchsize=64, devices=-1):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_file', type=str, default='models/ResNet.py')
-    parser.add_argument('--model_name', type=str, default='ResNet')
+    parser.add_argument('--model_file', type=str, default='models/vgg.py')
+    parser.add_argument('--model_name', type=str, default='VGG')
     parser.add_argument('--gpus', type=int, nargs='*', default=[0])
-    parser.add_argument('--batchsize', type=int, default=128)
     parser.add_argument('--seed', type=int, default=0)
+
+    # Train settings
+    parser.add_argument('--batchsize', type=int, default=128)
+    parser.add_argument('--training_epoch', type=int, default=300)
+    parser.add_argument('--initial_lr', type=float, default=0.05)
+    parser.add_argument('--lr_decay_rate', type=float, default=0.5)
+    parser.add_argument('--lr_decay_epoch', type=float, default=25)
+    parser.add_argument('--weight_decay', type=float, default=0.0005)
 
     # Data augmentation settings
     parser.add_argument('--random_angle', type=float, default=15.0)
-    parser.add_argument('--pca_sigma', type=float, default=75.5)
-    parser.add_argument('--expand_ratio', type=float, default=1.5)
+    parser.add_argument('--pca_sigma', type=float, default=25.5)
+    parser.add_argument('--expand_ratio', type=float, default=1.2)
     parser.add_argument('--crop_size', type=int, nargs='*', default=[28, 28])
     args = parser.parse_args()
+
+    # Enable autotuner of cuDNN
+    chainer.config.autotune = True
 
     # Set the random seeds
     random.seed(args.seed)
@@ -182,4 +206,7 @@ if __name__ == '__main__':
     train = TransformDataset(train, train_transform)
     valid = TransformDataset(valid, valid_transform)
 
-    run_training(net, train, valid, result_dir, args.batchsize, args.gpus)
+    run_training(
+        net, train, valid, result_dir, args.batchsize, args.gpus,
+        args.training_epoch, args.initial_lr, args.lr_decay_rate,
+        args.lr_decay_epoch, args.weight_decay)

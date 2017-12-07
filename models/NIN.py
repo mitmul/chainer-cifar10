@@ -29,3 +29,10 @@ class NIN(chainer.Chain):
         h = F.average_pooling_2d(h, h.shape[2])
         y = F.reshape(h, (x.shape[0], 10))
         return y
+
+
+if __name__ == '__main__':
+    import numpy as np
+    x = np.random.randn(1, 3, 32, 32).astype(np.float32)
+    model = NIN(10)
+    y = model(x)

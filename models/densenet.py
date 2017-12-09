@@ -15,7 +15,8 @@ class BNReLUConvDropConcat(chainer.Chain):
 
     def __call__(self, x):
         h = self.conv(F.relu(self.bn(x)))
-        h = F.dropout(h, ratio=self.dropout_ratio)
+        if self.dropout_ratio > 0:
+            h = F.dropout(h, ratio=self.dropout_ratio)
         return F.concat((x, h))
 
 
@@ -45,7 +46,8 @@ class Transition(chainer.Chain):
 
     def __call__(self, x):
         h = F.relu(self.bn(x))
-        h = F.dropout(self.conv(h), ratio=self.dropout_ratio)
+        if self.dropout_ratio > 0:
+            h = F.dropout(self.conv(h), ratio=self.dropout_ratio)
         h = F.average_pooling_2d(h, 2)
         return h
 
@@ -66,7 +68,7 @@ class BNReLUAPoolFC(chainer.Chain):
 
 class DenseNet(chainer.ChainList):
     def __init__(
-            self, n_layer=12, growth_rate=12, n_class=10, dropout_ratio=0.2,
+            self, n_layer=32, growth_rate=24, n_class=10, dropout_ratio=0,
             in_ch=16, n_block=3):
         super(DenseNet, self).__init__()
         w = chainer.initializers.HeNormal()
@@ -93,3 +95,7 @@ if __name__ == '__main__':
     x = np.random.randn(1, 3, 32, 32).astype(np.float32)
     model = DenseNet(10)
     y = model(x)
+    from chainer import computational_graph
+    cg = computational_graph.build_computational_graph([y])
+    with open('densenet.dot', 'w') as fp:
+        fp.write(cg.dump())

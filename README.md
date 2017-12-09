@@ -2,7 +2,7 @@
 
 ## Requirement
 
-- Python 2.7.6 + , 3.5.1+
+- Python 3.5.1+ (not tested with Python2)
 - pip packages:
     - Chainer>=3.1.0
     - ChainerCV>=0.8.0

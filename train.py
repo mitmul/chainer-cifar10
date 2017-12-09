@@ -148,7 +148,7 @@ if __name__ == '__main__':
 
     # Train settings
     parser.add_argument('--batchsize', type=int, default=128)
-    parser.add_argument('--training_epoch', type=int, default=300)
+    parser.add_argument('--training_epoch', type=int, default=500)
     parser.add_argument('--initial_lr', type=float, default=0.05)
     parser.add_argument('--lr_decay_rate', type=float, default=0.5)
     parser.add_argument('--lr_decay_epoch', type=float, default=25)

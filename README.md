@@ -1,6 +1,6 @@
 # Train various models on CIFAR10 with Chainer
 
-## Requirement
+## Requirements
 
 - Python 3.5.1+ (not tested with Python2)
 - pip packages:

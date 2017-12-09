@@ -4,8 +4,8 @@
 
 - Python 3.5.1+ (not tested with Python2)
 - pip packages:
-    - Chainer>=3.1.0
-    - ChainerCV>=0.8.0
+    - chainer>=3.1.0
+    - chainercv>=0.8.0
     - numpy>=1.10.1
     - matplotlib>=2.0.0
     - scikit-image>=0.13.1

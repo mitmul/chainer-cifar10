@@ -44,8 +44,14 @@ accuracies = {}
 for model_name, rows in rows.items():
     rows = sorted(rows, reverse=True)
     for acc, log, args, dname in rows:
-        accuracies['{},{}'.format(args['model_name'], dname)] = np.array([
-            (l['epoch'], l['val/main/accuracy']) for l in log])
+        if args['model_name'] in accuracies:
+            if acc > accuracies[args['model_name']][-1, 1]:
+                accuracies[args['model_name']] = np.array([
+                    (l['epoch'], l['val/main/accuracy']) for l in log])
+        else:
+            accuracies[args['model_name']] = np.array([
+                (l['epoch'], l['val/main/accuracy']) for l in log])
+
         for key, value in log[-1].items():
             if key not in headers:
                 continue

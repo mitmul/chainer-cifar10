@@ -56,7 +56,7 @@ def transform(
         angle = np.random.uniform(-random_angle, random_angle)
         img = cv_rotate(img, angle)
 
-    # Color augmentation and Flipping
+    # Color augmentation
     if train and pca_sigma != 0:
         img = transforms.pca_lighting(img, pca_sigma)
 

@@ -32,6 +32,18 @@ $ MPLBACKEND = Agg python train.py \
 --gpus 0 
 ```
 
+## About data augmentation
+
+It performs various data augmentation using [ChainerCV](https://github.com/chainer/chainercv). Provided operations are:
+
+- Random roating (using OpenCV or scikit-image)
+- Random lighting
+- Random LR-flipping
+- Random zomming (a.k.a. expansion)
+- Random cropping
+
+See the details at `transform` function in `train.py`.
+
 ## Exprimental Results
 
 |   val/main/accuracy |   epoch | model_name   |   batchsize |   initial_lr |   lr_decay_rate |   lr_decay_epoch |   weight_decay |   random_angle |   pca_sigma |   expand_ratio | crop_size   |

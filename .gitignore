@@ -5,11 +5,13 @@ results
 .DS_Store
 .ftpconfig
 .remote-sync.json*
+.vscode/
 
 *__pycache__*
 *.npy
 *.pyc
 *.png
+!compare.png
 *.txt
 *.log
 *.out

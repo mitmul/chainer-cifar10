@@ -1,40 +1,31 @@
-# chainer-cifar10
+# Train models on CIFAR10 with Chainer
 
-## Requirement
+# Requirement
 
-- Python 2.7.6+, 3.5.1+
+- Python 2.7.6 + , 3.5.1+
+    - Chainer >= 3.1.0
+    - ChainerCV >= 0.8.0
+    - numpy >= 1.10.1
+    - matplotlib >= 2.0.0
+    - scikit - image >= 0.13.1
+    - opencv-python>=3.3.0
+    - tabulate>=0.8.2
 
-  - Chainer 1.10.0+
-  - scikit-image 0.11.3
-  - scipy 0.16.0
-  - numpy 1.10\. 1
-
-## Download & Construct Cifar10 Dataset
-
-```
-$ bash download.sh
-```
-
-## Start Training
+# Quick Start
 
 ```
-$ nohup python train.py &
+$ MPLBACKEND = Agg python train.py
 ```
 
-## Draw Loss Curve
+# Exprimental Results
 
-```
-$ python draw_loss.py --logfile log.txt --outfile log.jpg
-```
+|   val/main/accuracy |   epoch | model_name   |   batchsize |   initial_lr |   lr_decay_rate |   lr_decay_epoch |   weight_decay |   random_angle |   pca_sigma |   expand_ratio | crop_size   |
+|--------------------:|--------:|:-------------|------------:|-------------:|----------------:|-----------------:|---------------:|---------------:|------------:|---------------:|:------------|
+|            0.958169 |     300 | WideResNet   |         128 |         0.05 |             0.5 |               25 |         0.0005 |             15 |        25.5 |            1.2 | [28, 28]    |
+|            0.945708 |     300 | ResNet50     |         128 |         0.05 |             0.5 |               25 |         0.0005 |             15 |        25.5 |            1.2 | [28, 28]    |
+|            0.930083 |     300 | VGG          |         128 |         0.1  |             0.5 |               30 |         0.0005 |             15 |        25.5 |            1.0 | [28, 28]    |
+|            0.9196   |     300 | DenseNet     |         128 |         0.05 |             0.5 |               25 |         0.0005 |             15 |        25.5 |            1.2 | [28, 28]    |
+|            0.879351 |     500 | NIN          |         128 |         0.01 |             0.5 |              100 |         0.0005 |             15 |        25.5 |            1.2 | [28, 28]    |
+|            0.855815 |     300 | Cifar10      |         128 |         0.01 |             0.5 |               50 |         0.0005 |             15 |        25.5 |            1.2 | [28, 28]    |
 
-## Deep Residual Network (ResNet-110)
-
-```
-$ python train.py --model models/ResNet.py --lr 0.1 --gpu 0
-```
-
-The test accuracy after 15 epochs is 0.9406 (error (%): 5.94). The test accuracy reported in the MSR paper ([Deep Residual Learning for Image Recognition](http://arxiv.org/abs/1512.03385)) is 0.9357 (error (%): 6.43) (see Table 6).
-
-### Resulting loss curve
-
-![](https://raw.githubusercontent.com/wiki/mitmul/chainer-cifar10/images/ResNet_loss.png)
+![](compare.png)

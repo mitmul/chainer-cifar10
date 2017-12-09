@@ -1,4 +1,4 @@
-# Train models on CIFAR10 with Chainer
+# Train various models on CIFAR10 with Chainer
 
 ## Requirement
 

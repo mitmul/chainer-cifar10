@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import glob
-import os
-import json
 from collections import defaultdict
+import glob
+import json
+import os
+
+import numpy as np
+
 import matplotlib.pyplot as plt
 from tabulate import tabulate
 
@@ -37,9 +40,12 @@ headers = [
 ]
 
 values = defaultdict(list)
+accuracies = {}
 for model_name, rows in rows.items():
     rows = sorted(rows, reverse=True)
     for acc, log, args, dname in rows:
+        accuracies['{},{}'.format(args['model_name'], dname)] = np.array([
+            (l['epoch'], l['val/main/accuracy']) for l in log])
         for key, value in log[-1].items():
             if key not in headers:
                 continue
@@ -48,21 +54,11 @@ for model_name, rows in rows.items():
             if key not in headers:
                 continue
             values[key].append(value)
-for key, val in values.items():
-    print(key, len(val))
 print(tabulate(values, headers='keys', tablefmt='pipe'))
 
-# print('=' * 20)
-
-# for model_name, row in rows.items():
-#     dname = sorted(row)[-1][2]
-#     print(dname)
-#     acc = [l['val/main/accuracy']
-#            for l in json.load(open('{}/log'.format(dname)))]
-#     plt.plot(acc, label='')
-
-# print('=' * 20)
-
-# for model_name, row in rows.items():
-#     for r in sorted(row, reverse=True):
-#         print(r[1])
+for name, accuracy in accuracies.items():
+    name = name.split(',')[0]
+    plt.plot(accuracy[:, 0], accuracy[:, 1], label=name)
+plt.grid()
+plt.legend()
+plt.savefig('compare.png')

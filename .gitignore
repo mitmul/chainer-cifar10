@@ -11,6 +11,7 @@ results
 *.npy
 *.pyc
 *.png
+!compare.png
 *.txt
 *.log
 *.out

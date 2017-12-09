@@ -15,3 +15,5 @@ results
 *.txt
 *.log
 *.out
+*.dot
+*.pdf

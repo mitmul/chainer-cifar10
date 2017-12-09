@@ -14,8 +14,14 @@
 
 ## Quick Start
 
+```bash
+MPLBACKEND=Agg python train.py
 ```
-$ MPLBACKEND = Agg python train.py \
+
+With full arguments:
+
+```bash
+MPLBACKEND=Agg python train.py \
 --model_file models/wide_resnet.py \
 --model_name WideResNet \
 --batchsize 128 \

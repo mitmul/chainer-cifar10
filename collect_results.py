@@ -45,6 +45,8 @@ accuracies = {}
 for model_name, rows in rows.items():
     rows = sorted(rows, reverse=True)
     for acc, log, args, dname in rows:
+        if args['model_name'] == 'Cifar10':
+            args['model_name'] = 'LeNet5'
         if args['model_name'] in accuracies:
             if acc > accuracies[args['model_name']][-1, 1]:
                 accuracies[args['model_name']] = np.array([

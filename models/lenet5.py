@@ -3,10 +3,10 @@ import chainer.functions as F
 import chainer.links as L
 
 
-class Cifar10(chainer.Chain):
+class LeNet5(chainer.Chain):
 
     def __init__(self, n_class=10):
-        super(Cifar10, self).__init__()
+        super(LeNet5, self).__init__()
         with self.init_scope():
             self.conv1 = L.Convolution2D(3, 32, 5, stride=1, pad=2)
             self.conv2 = L.Convolution2D(32, 32, 5, stride=1, pad=2)

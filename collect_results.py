@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from collections import defaultdict
+from collections import OrderedDict
 import glob
 import json
 import os
@@ -60,7 +61,12 @@ for model_name, rows in rows.items():
             if key not in headers:
                 continue
             values[key].append(value)
-print(tabulate(values, headers='keys', tablefmt='pipe'))
+
+ordered_values = OrderedDict()
+for head in headers:
+    ordered_values[head] = values[head]
+
+print(tabulate(ordered_values, headers='keys', tablefmt='pipe'))
 
 for name, accuracy in accuracies.items():
     name = name.split(',')[0]

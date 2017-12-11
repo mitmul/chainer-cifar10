@@ -42,7 +42,7 @@ MPLBACKEND=Agg python train.py \
 
 It performs various data augmentation using [ChainerCV](https://github.com/chainer/chainercv). Provided operations are:
 
-- Random roating (using OpenCV or scikit-image)
+- Random rotating (using OpenCV or scikit-image)
 - Random lighting
 - Random LR-flipping
 - Random zomming (a.k.a. expansion)

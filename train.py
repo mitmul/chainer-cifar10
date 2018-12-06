@@ -2,28 +2,29 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-from functools import partial
-from importlib import import_module
 import json
 import os
 import random
 import re
 import shutil
 import time
-
-import numpy as np
+from functools import partial
+from importlib import import_module
 
 import chainer
+import chainer.links as L
+import numpy as np
 from chainer import iterators
 from chainer import optimizers
 from chainer import training
 from chainer.datasets import TransformDataset
 from chainer.datasets import cifar
-import chainer.links as L
 from chainer.training import extensions
 from chainercv import transforms
+
 import cv2 as cv
 from skimage import transform as skimage_transform
+
 
 USE_OPENCV = False
 
@@ -163,6 +164,7 @@ if __name__ == '__main__':
 
     # Enable autotuner of cuDNN
     chainer.config.autotune = True
+    chainer.cuda.set_max_workspace_size(1024 * 1024 * 1024)
 
     # Set the random seeds
     random.seed(args.seed)

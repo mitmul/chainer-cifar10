@@ -1,16 +1,20 @@
 # Train various models on CIFAR10 with Chainer
 
-## Requirements
+## Tested environment
 
-- Python 3.5.1+ (not tested with Python2)
+- Python 3.6.6 (not tested with Python2)
 - pip packages:
-    - chainer>=3.1.0
-    - chainercv>=0.8.0
-    - numpy>=1.10.1
-    - matplotlib>=2.0.0
-    - scikit-image>=0.13.1
-    - opencv-python>=3.3.0
-    - tabulate>=0.8.2
+    - Chainer v6.0.0b1
+    - CuPy v6.0.0b1
+    - ChainerCV v0.11.0
+    - NumPy v1.15.4
+    - matplotlib v3.0.1
+    - scikit-image v0.14.0
+    - opencv-python 3.4.3
+    - tabulate 0.8.2
+- GPU related libraries:
+    - CUDA v9.2
+    - cuDNN: v7.3.1
 
 ## Quick Start
 

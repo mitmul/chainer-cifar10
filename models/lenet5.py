@@ -18,7 +18,7 @@ class LeNet5(chainer.Chain):
         h = F.max_pooling_2d(F.relu(self.conv1(x)), 3, stride=2)
         h = F.max_pooling_2d(F.relu(self.conv2(h)), 3, stride=2)
         h = F.relu(self.conv3(h))
-        h = F.spatial_pyramid_pooling_2d(h, 3, F.MaxPooling2D)
+        h = F.spatial_pyramid_pooling_2d(h, 3, 'max')
         h = F.dropout(F.relu(self.fc4(h)), ratio=0.5)
         h = self.fc5(h)
         return h

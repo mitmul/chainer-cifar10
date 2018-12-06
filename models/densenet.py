@@ -46,8 +46,9 @@ class Transition(chainer.Chain):
 
     def __call__(self, x):
         h = F.relu(self.bn(x))
+        h = self.conv(h)
         if self.dropout_ratio > 0:
-            h = F.dropout(self.conv(h), ratio=self.dropout_ratio)
+            h = F.dropout(h, ratio=self.dropout_ratio)
         h = F.average_pooling_2d(h, 2)
         return h
 
